@@ -9,6 +9,24 @@ def parse_traceback(str_traceback):
     ansi_escape = re.compile(r'\\x1b\[[0-9;]*m') #re.compile(r'(?:\x1B[@-_]|[\x80-\x9F])[0-?]*[ -/]*[@-~]')
     return ansi_escape.sub('', str_traceback)
 
+def get_evalue_ignored_from_traceback(row, n_cha_cutoff = 150, min_alphanum_rate = 0.5):
+    keyword = str(row['ename'])+':'
+    parts = row['traceback'].rpartition(keyword)
+    if len(parts[2].strip()) > 0:
+        # initial
+        if len(parts[0]) <= 0 or not parts[0][-1] in(['\'', '\"']):
+            rep = ''
+        else:
+            rep = parts[0][-1]
+        value_can = parts[2].replace('\\n','').replace(rep+']','') # remove '] or "]
+        if len(value_can.strip()) > 0:
+            value_res = value_can.partition(rep+', ')[0].strip()
+            if len(value_res) > 10:
+                alphanum_rate = len([c for c in value_res if c.isalnum()]) / len(value_res)
+                if alphanum_rate >= min_alphanum_rate:
+                    return value_res[:n_cha_cutoff]
+    return None
+
 def is_contain_error_output(file_name, file_as_json):
     cells = file_as_json["cells"]
     res = 0
