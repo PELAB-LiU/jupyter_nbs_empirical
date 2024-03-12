@@ -10,17 +10,19 @@ from sklearn.metrics.cluster import adjusted_rand_score, normalized_mutual_info_
 from sentence_transformers import SentenceTransformer
 from sklearn.neighbors import NearestNeighbors
 from sklearn.preprocessing import StandardScaler
+import nltk
+import string
 
-def preprocess_text(text, nlp):
-    # remove special chars
-    text = re.sub("[^A-Za-z0-9_]+", " ", str(text))
-    
-    # remove stopwords
-    doc = nlp(text)
+def preprocess_text(text):
+    # remove url
+    pattern = r"(http|ftp|https)://([\w_-]+(?:(?:\.[\w_-]+)+))([\w.,@?^=%&:/~+#-]*[\w@?^=%&/~+#-])?"
+    cleaned_text = re.sub(pattern, "", str(text))
+    # remove punctuation and words containing numbers
+    tokens = nltk.word_tokenize(cleaned_text)
     res = []
-    for token in doc:
-        if token.is_stop != True:
-            res.append(token.text.lower())
+    for token in tokens:
+        if (token not in string.punctuation) and bool(re.search(r'\d', token)) != True and ('_' not in token):
+            res.append(re.sub('[^A-Za-z-]+', '', token).strip().lower())
     return " ".join(res)
 
 def scaling(X_array):
