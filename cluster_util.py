@@ -1,7 +1,7 @@
 import pandas as pd 
 from sklearn.feature_extraction.text import TfidfVectorizer 
 from sklearn.decomposition import PCA 
-from sklearn.cluster import KMeans, DBSCAN
+from sklearn.cluster import KMeans, DBSCAN, OPTICS
 import matplotlib.pyplot as plt 
 import re
 import numpy as np
@@ -85,6 +85,14 @@ def cluster_kmeans(X_array, n_clusters=2, max_iter=500, random_state=28):
 
     return kmeans.labels_
 
+def cluster_optics(X_array, min_samples = 50)
+    optics = OPTICS(min_samples=min_samples).fit(X_array)
+    no_clusters = len(set(optics.labels_)) - (1 if -1 in optics.labels_ else 0) # -1 is noise
+    no_noise = np.sum(np.array(optics.labels_) == -1, axis=0)
+    print('Estimated no. of clusters: %d' % no_clusters)
+    print('Estimated no. of noise points: %d' % no_noise)
+    return optics.labels_
+
 def eps_dbscan(n_neighbors, X_array):
     neighbors = NearestNeighbors(n_neighbors=n_neighbors)
     neighbors_fit = neighbors.fit(X_array)
@@ -121,7 +129,7 @@ def print_clusters(num_clusters, res_clusters, n_sample=10):
         print('\n')
 
 # evaluate clustering quality with knowing the true labels
-def eval_cluster(Y_true, X_array):
+def eval_cluster_groundtruth(Y_true, X_array):
     y_pred = kmeans.fit_predict(X_array)
     
     # Evaluate the performance using ARI, NMI, and FMI
