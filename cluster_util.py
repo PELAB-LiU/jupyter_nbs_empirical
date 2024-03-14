@@ -7,11 +7,14 @@ import re
 import numpy as np
 #from scipy.spatial.distance import cdist
 from sklearn.metrics.cluster import adjusted_rand_score, normalized_mutual_info_score, fowlkes_mallows_score
+from sklearn.metrics import silhouette_score
 from sentence_transformers import SentenceTransformer
 from sklearn.neighbors import NearestNeighbors
 from sklearn.preprocessing import StandardScaler
 import nltk
 import string
+from kneed import KneeLocator
+import math
 
 def preprocess_text(text):
     # remove url
@@ -24,6 +27,12 @@ def preprocess_text(text):
         if (token not in string.punctuation) and bool(re.search(r'\d', token)) != True and ('_' not in token):
             res.append(re.sub('[^A-Za-z-]+', '', token).strip().lower())
     return " ".join(res)
+
+def preprocess_text_transformer(text):
+    # remove url
+    pattern = r"(http|ftp|https)://([\w_-]+(?:(?:\.[\w_-]+)+))([\w.,@?^=%&:/~+#-]*[\w@?^=%&/~+#-])?"
+    cleaned_text = re.sub(pattern, "", str(text))
+    return cleaned_text.strip().lower()
 
 def scaling(X_array):
     return StandardScaler().fit_transform(X_array)
@@ -85,7 +94,7 @@ def cluster_kmeans(X_array, n_clusters=2, max_iter=500, random_state=28):
 
     return kmeans.labels_
 
-def cluster_optics(X_array, min_samples = 50)
+def cluster_optics(X_array, min_samples = 50):
     optics = OPTICS(min_samples=min_samples).fit(X_array)
     no_clusters = len(set(optics.labels_)) - (1 if -1 in optics.labels_ else 0) # -1 is noise
     no_noise = np.sum(np.array(optics.labels_) == -1, axis=0)
@@ -93,20 +102,18 @@ def cluster_optics(X_array, min_samples = 50)
     print('Estimated no. of noise points: %d' % no_noise)
     return optics.labels_
 
-def eps_dbscan(n_neighbors, X_array):
-    neighbors = NearestNeighbors(n_neighbors=n_neighbors)
-    neighbors_fit = neighbors.fit(X_array)
-    distances, indices = neighbors_fit.kneighbors()
-
-    sorted_distances = np.sort(distances, axis=0)
-
-    fig = plt.figure(figsize=(6,3))
-    ax = fig.add_subplot()
-    ax.set_xlabel("Sample number")
-    ax.set_ylabel("Distance to furthest NN")
-    ax.plot(sorted_distances[:,2])
-    #ax.axhline(y=15, linestyle='dashed')
-    plt.show()
+def epsilon_search_dbscan(X_array):
+    k = round(math.sqrt(len(X_array)))
+    # print('K-neighbours = {}'.format(k))
+    nbrs = NearestNeighbors(n_neighbors=k, n_jobs=-1, algorithm='auto').fit(X_array)
+    distances, indices = nbrs.kneighbors(X_array)
+    distances = [np.mean(d) for d in np.sort(distances, axis=0)]
+    
+    kneedle = KneeLocator(distances, list(range(len(distances))), online=True)
+    epsilon = np.mean(list(kneedle.all_elbows))
+    if epsilon == 0.0:
+        epsilon = np.mean(distances)
+    return epsilon
 
 # eps: https://iopscience.iop.org/article/10.1088/1755-1315/31/1/012012/pdf
 # For 2-dimensional data, use DBSCAN’s default value of MinPts = 4 (Ester et al., 1996).
@@ -128,6 +135,9 @@ def print_clusters(num_clusters, res_clusters, n_sample=10):
         print(res_cluster.sample(min(len(res_cluster), n_sample)))
         print('\n')
 
+def eval_cluster_silhouette(X_array, y_predicted):
+    return silhouette_score(X_array, y_predicted)
+        
 # evaluate clustering quality with knowing the true labels
 def eval_cluster_groundtruth(Y_true, X_array):
     y_pred = kmeans.fit_predict(X_array)
