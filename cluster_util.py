@@ -135,6 +135,15 @@ def print_clusters(num_clusters, res_clusters, n_sample=10):
         print(res_cluster.sample(min(len(res_cluster), n_sample)))
         print('\n')
 
+def print_clusters_general(cluster_values, cluster_labels, cluster_ids, n_sample=10):
+    for i in cluster_ids:
+        res_cluster = cluster_values[cluster_labels==i]
+        print('Cluster {} has {} samples'.format(i, len(res_cluster)))
+        n_sample = min(len(res_cluster), n_sample)
+        print('Printing {} samples of cluster {}'.format(n_sample, i))
+        print(res_cluster.sample(n_sample))
+        print('\n')
+        
 def eval_cluster_silhouette(X_array, y_predicted):
     return silhouette_score(X_array, y_predicted)
         
