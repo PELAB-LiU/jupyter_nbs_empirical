@@ -170,6 +170,24 @@ def extract_lib(txt_traceback):
     else:
         return None
 
+def simple_lib_parser(libs_tar):
+    if pd.isna(libs_tar):
+        return None
+    lib_tar = libs_tar.lower().split(",")[-1]
+    if 'pandas' in lib_tar:
+        return 'pandas'
+    if 'torch' in lib_tar:
+        return 'torch'
+    if ('tensorflow' in lib_tar) or ('keras' in lib_tar):
+        return 'tensorflow'
+    if 'sklearn' in lib_tar:
+        return 'sklearn'
+    if 'matplotlib' in lib_tar:
+        return 'matplotlib'
+    if 'numpy' in lib_tar:
+        return 'numpy'
+    return lib_tar
+    
 def is_contain_error_output(file_name, file_as_json):
     cells = file_as_json["cells"]
     res = 0
