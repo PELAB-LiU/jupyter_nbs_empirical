@@ -4,6 +4,7 @@ import os
 from iteration_utilities import unique_everseen
 import json
 import re
+import sys
 
 # This is simply parse and match each line of code
 def get_imports_nbs_outermost_static(path_tar):
@@ -11,25 +12,42 @@ def get_imports_nbs_outermost_static(path_tar):
     for path, subdirs, files in os.walk(path_tar):
         for f in files:
             if f.endswith(".ipynb"):
-                imports = list()
-                nb_file = open(f"{path}/{f}", "r", encoding="utf-8")
-                j = json.load(nb_file)
-                if j["nbformat"] >=4:
-                    for i,cell in enumerate(j["cells"]):
-                        if cell["cell_type"] == "code":
-                            if isinstance(cell["source"], list):
-                                for line in cell["source"]:
-                                    imp = get_imports_line_outermost(line)
-                                    if len(imp) > 0:
-                                        imports.extend(imp)
+                try:
+                    with open(f"{path}/{f}", "r", encoding="utf-8") as data_file:
+                        try:
+                            j = json.load(data_file)
+                            # j = json.loads(unicode(data_file.read(), errors='ignore'))
+                            imports = list()
+                            if ("nbformat" in j) and j["nbformat"] >=4:
+                                for i,cell in enumerate(j["cells"]):
+                                    if cell["cell_type"] == "code":
+                                        if isinstance(cell["source"], list):
+                                            for line in cell["source"]:
+                                                imp = get_imports_line_outermost(line)
+                                                if len(imp) > 0:
+                                                    imports.extend(imp)
+                                        else:
+                                            for line in cell["source"].split("\n"):
+                                                imp = get_imports_line_outermost(line)
+                                                if len(imp) > 0:
+                                                    imports.extend(imp)
+                                res.append({"fname":f, "imports":set(imports)})
                             else:
-                                for line in cell["source"].split("\n"):
-                                    imp = get_imports_line_outermost(line)
-                                    if len(imp) > 0:
-                                        imports.extend(imp)
-                    res.append({"fname":f, "imports":set(imports)})
-                else:
-                    print("too old version of jupyter notebook", f)
+                                print("wrong format of jupyter notebook", f)
+                        except json.decoder.JSONDecodeError:
+                            print("decoding error: {}".format(f))
+                        except Exception as err:
+                            print(f"Unexpected error converting to json {f}")
+                            
+                except FileNotFoundError:
+                    print(f"File {f} not found.  Aborting")
+                    sys.exit(1)
+                except OSError:
+                    print(f"OS error occurred trying to open {f}")
+                    sys.exit(1)
+                except Exception as err:
+                    print(f"Unexpected error opening {f}")
+                    sys.exit(1)
     return res
 
 def get_imports_line_outermost(line):
