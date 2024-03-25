@@ -32,7 +32,7 @@ def get_evalue_ignored_from_traceback(row):
     txt_traceback = row["traceback"]
     target_err = str(row["ename"]).strip().lower()
     list_tbs = list_traceback(txt_traceback)
-    if len(list_tbs) > 0:
+    if list_tbs and len(list_tbs) > 0:
         list_last = list_tbs[-1].split(":")
         #print(list_last[0].strip().lower())
         if list_last and list_last[0].strip().lower()==target_err:
@@ -165,6 +165,10 @@ def extract_lib(txt_traceback):
             matc = re.search(pattern2, mat[0])
             if matc:
                 libs.append(matc.group(1)[10:-1])
+            else:
+                matc_1 = mat[1].split(".py")
+                if len(matc_1)>0:
+                    libs.append(matc_1[0])
     libs = set(libs)
     if len(libs)>0:
         return ",".join(libs)
