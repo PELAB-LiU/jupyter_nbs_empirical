@@ -7,7 +7,7 @@ import re
 import sys
 
 # This is simply parse and match each line of code
-def get_imports_nbs_static(path_tar, get_imports_func = get_imports_line_all):
+def get_imports_nbs_static(path_tar, get_imports_func):
     res = []
     for path, subdirs, files in os.walk(path_tar):
         for f in files:
@@ -58,6 +58,30 @@ def get_imports_line_outermost(line):
 def get_imports_line_all(line):
     pattern = re.compile(r"(?m)^(?:from[ ]+(\S+)[ ]+)?import[ ]+(\S+)(?:[ ]+as[ ]+(\S+))?[ ]*")
     return re.findall(pattern, line)
+
+# imported library name corresponding to alias in the code
+# will be import names if no alias has been defined
+def get_lib_alias(imps):
+    res = []
+    for imp in imps:
+        res_item = []
+        if len(imp[0])>0:
+            res_item.append(imp[0].split(".")[0])
+        else:
+            res_item.append(imp[1].split(".")[0])
+        res_item.append(imp[2]) if len(imp[2])>0 else res_item.append(imp[1])
+        res.append(res_item)
+    return res
+
+
+
+
+
+
+
+
+
+
 
 # The code has to compile by ast parser for this to work
 def get_imports_nbs_outermost_ast(path_tar):
