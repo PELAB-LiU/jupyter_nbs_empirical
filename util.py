@@ -1,11 +1,15 @@
 import sys
+import re
+import os
+import json
+import shutil
+import pandas as pd
+import ast
+import importlib
+import inspect
+import pkgutil
+import pickle
 try:
-    import re
-    import os
-    import json
-    import shutil
-    import pandas as pd
-    import ast
     from guesslang import Guess
 except ImportError:
     pass
@@ -193,6 +197,49 @@ def simple_lib_parser(libs_tar):
         return 'numpy'
     return lib_tar
     
+def extract_lib_2(row, df_imports, lib_names, lib_classes_dict):
+    pattern_crash_line = re.compile('(--->\s*\d+\s*(.*))')
+    pattern_obj = re.compile(r"'([^']+)'(?=\s+object)")
+    # rule 1
+#     if row["ename"] in error_type_ignore:
+#         return None
+    df_import_tar = df_imports[df_imports.fname==row["fname"]]
+    lib_alias = df_import_tar.lib_alias.iloc[0] if len(df_import_tar)>0 else []
+    for lib_name in lib_names:
+        # rule 2.1
+        if isinstance(row["evalue"],str) and (lib_name in row["evalue"]):
+            return lib_name
+        # rule 4
+        if isinstance(row["evalue"],str):
+            obj_mat = re.findall(pattern_obj, row["evalue"])
+            if len(obj_mat)>0:
+                for k, v in lib_classes_dict.items():
+                    if obj_mat[0] in v:
+                        return k
+        # get alias for this lib_name
+        if len(lib_alias)<=0:
+            continue
+        alias = []
+        for t in eval(lib_alias):
+            if t[0]==lib_name:
+                alias.append(t[1])
+        tb_list = list_traceback(row["traceback"]) # util.
+        # rule 2.2
+        if tb_list:
+            for i in range(len(tb_list)-1, -1, -1):
+                lines = tb_list[i].replace("\\n","\n").split("\n")
+                for line in lines:
+                    crash_code_mat = re.findall(pattern_crash_line, line)
+                    if len(crash_code_mat)>0 and len(crash_code_mat[0])>1:
+                        crash_code = crash_code_mat[0][1]
+                        #print(crash_code)
+                        if "=" in crash_code:
+                            parts = crash_code.split("=", 1)
+                            if len(parts)>1 and len(alias)>0:
+                                if any(alia in parts[1].strip() for alia in alias):
+                                    return lib_name 
+    return None
+
 def is_contain_error_output(file_name, file_as_json):
     cells = file_as_json["cells"]
     res = 0
@@ -271,3 +318,28 @@ def nb_to_py(path_tar):
                                 of.write(line)
                         of.write('\n\n')
                 of.close()
+                
+                
+                
+def export_classes_from_modules(lib_names, export_path='lib_classes.pickle'):
+    lib_classes = {} # types/objects
+    for lib_name in lib_names:
+        package_classes = []
+        package = importlib.import_module(lib_name)
+
+        prefix = package.__name__ + "."
+        try:
+            for importer, modname, ispkg in pkgutil.walk_packages(package.__path__, prefix, onerror=lambda x: None):
+                # print(modname) # submodules
+                try:
+                    module = __import__(modname, fromlist="dummy")
+                    package_classes.extend([m[0] for m in inspect.getmembers(module, inspect.isclass)]) # classes within submodules
+                except:
+                    print("import error for submodule: ", modname)
+                    pass
+        except:
+            package_classes.extend([m[0] for m in inspect.getmembers(package, inspect.isclass)]) # classes within submodules
+        lib_classes[lib_name]=package_classes
+
+    with open(export_path, 'wb') as f:
+        pickle.dump(lib_classes, f)
