@@ -343,3 +343,12 @@ def export_classes_from_modules(lib_names, export_path='lib_classes.pickle'):
 
     with open(export_path, 'wb') as f:
         pickle.dump(lib_classes, f)
+        
+def combine_pickles(list_pickle_paths, export_path):
+    res_dict = {}
+    for p in list_pickle_paths:
+        with open(p, 'rb') as f:
+            lib_classes_dict = pickle.load(f)
+        res_dict = {**res_dict, **lib_classes_dict}
+    with open(export_path, 'wb') as f:
+        pickle.dump(res_dict, f)
