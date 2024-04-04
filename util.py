@@ -11,6 +11,7 @@ import pkgutil
 import pickle
 import config
 import builtins
+import matplotlib.pyplot as plt
 try:
     from guesslang import Guess
 except ImportError:
@@ -370,7 +371,6 @@ def select_builtin_exps(df_err_lib_filtered):
         libs_n = df_err_builtin_exp.lib_parsed_pop.value_counts()
         lib_percent = len(df_err_builtin_exp[~df_err_builtin_exp["lib_parsed_pop"].isnull()])/len(df_err_builtin_exp)
         if len(df_err_builtin_exp)*lib_percent < config.err_lib_count_cutoff:
-            # cutoff 3
             if lib_percent < config.lib_percent_cutoff:
                 continue
         # select
@@ -396,3 +396,37 @@ def get_python_exception_names():
     list_of_exception_names = [ele for ele in list_of_exception_names if ele not in unwanted_exps]
     exception_list = [ele.lower() for ele in list_of_exception_names]
     return exception_list
+
+def visulize_exps_MLlibs(df_err_lib_filtered):
+    df_err_lib_filtered["lib_parsed_pop"] = df_err_lib_filtered['lib_parsed'].apply(lambda i: i if i in config.top_lib_names else None)
+    dict_err_MLlib_counts = {}
+    dict_err_MLlib_percents = {}
+    for builtin_exp in df_err_lib_filtered.ename.value_counts().index:
+        # cutoff 1
+        if builtin_exp in config.builtin_exps_excluded:
+            continue
+        df_err_builtin_exp = df_err_lib_filtered[df_err_lib_filtered["ename"]==builtin_exp]
+        #  data prepare
+        libs_count = len(df_err_builtin_exp[~df_err_builtin_exp["lib_parsed_pop"].isnull()])
+        if libs_count <= 0:
+            continue
+        lib_percent = libs_count/len(df_err_builtin_exp)
+        dict_err_MLlib_counts[builtin_exp]=libs_count
+        dict_err_MLlib_percents[builtin_exp]=lib_percent
+    #plot
+    df_err_MLlib_counts = pd.DataFrame.from_dict(dict_err_MLlib_counts.items())
+    df_err_MLlib_counts.columns = ['ename', 'eMLlib_count']
+    df_err_MLlib_counts = df_err_MLlib_counts.sort_values("eMLlib_count", ascending=0).reset_index(drop=True)
+    df_err_MLlib_counts.plot(title="#MLlib-related errors vs. exception types", 
+                             x='ename', y='eMLlib_count',
+                             kind="bar", figsize=(12,4))
+    plt.show()
+    df_err_MLlib_percents = pd.DataFrame.from_dict(dict_err_MLlib_percents.items())
+    df_err_MLlib_percents.columns = ['ename', 'eMLlib_percent']
+    df_err_MLlib_percents = df_err_MLlib_percents.sort_values("eMLlib_percent", ascending=0).reset_index(drop=True)
+    df_err_MLlib_percents.plot(title="%MLlib-related errors vs. exception types", 
+                               x='ename', y='eMLlib_percent',
+                               kind="bar", figsize=(12,4))
+    plt.show()
+    #return
+    return df_err_MLlib_counts, df_err_MLlib_percents
