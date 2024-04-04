@@ -9,6 +9,8 @@ import importlib
 import inspect
 import pkgutil
 import pickle
+import config
+import builtins
 try:
     from guesslang import Guess
 except ImportError:
@@ -352,3 +354,45 @@ def combine_pickles(list_pickle_paths, export_path):
         res_dict = {**res_dict, **lib_classes_dict}
     with open(export_path, 'wb') as f:
         pickle.dump(res_dict, f)
+        
+        
+# df_err_lib_filtered is expected to have "lib_parsed" column which indicate the utermost crash library
+def select_builtin_exps(df_err_lib_filtered):
+    n_selected_exps = 0
+    df_err_lib_filtered["lib_parsed_pop"] = df_err_lib_filtered['lib_parsed'].apply(lambda i: i if i in config.top_lib_names else None)
+    print("Selected exception types that meet the criterions:\n")
+    for builtin_exp in df_err_lib_filtered.ename.value_counts().index:
+        # cutoff 1
+        if builtin_exp in config.builtin_exps_excluded:
+            continue
+        df_err_builtin_exp = df_err_lib_filtered[df_err_lib_filtered["ename"]==builtin_exp]
+        # cutoff 2
+        libs_n = df_err_builtin_exp.lib_parsed_pop.value_counts()
+        lib_percent = len(df_err_builtin_exp[~df_err_builtin_exp["lib_parsed_pop"].isnull()])/len(df_err_builtin_exp)
+        if len(df_err_builtin_exp)*lib_percent < config.err_lib_count_cutoff:
+            # cutoff 3
+            if lib_percent < config.lib_percent_cutoff:
+                continue
+        # select
+        n_selected_exps += 1
+        n_print = min(3, len(libs_n))
+        print("{0}({1}), {2:.2%}({4}) are with the top libraries, top {3}:".format(builtin_exp, len(df_err_builtin_exp),lib_percent, n_print,int(len(df_err_builtin_exp)*lib_percent)))
+        for i in range(n_print):
+            print("\t{0:<12} {1:>12} samples".format(libs_n.index[i], libs_n.values[i]))
+    print("\nIn total, {0} exception types are selected for further analysis".format(n_selected_exps))
+    
+    
+def reload_module(module):
+    import importlib
+    importlib.reload(module)
+    import module
+
+def get_python_exception_names():
+    list_of_exception_names = [
+        name for name, value in builtins.__dict__.items() 
+        if isinstance(value, type) and issubclass(value, BaseException)
+    ]
+    unwanted_exps = ["BaseException", "BaseExceptionGroup", "Exception", "ExceptionGroup"]
+    list_of_exception_names = [ele for ele in list_of_exception_names if ele not in unwanted_exps]
+    exception_list = [ele.lower() for ele in list_of_exception_names]
+    return exception_list
