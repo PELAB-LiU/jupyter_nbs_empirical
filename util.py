@@ -304,24 +304,43 @@ def nb_to_py(path_tar):
     for path, subdirs, files in os.walk(path_tar):
         for f in files:
             if f.endswith(".ipynb"):
-                nb_file = open(f"{path}/{f}", "r", encoding="utf-8")
-                j = json.load(nb_file)
-                on = f.replace('.ipynb',"")+'.py'
-                of = open(f"{path}/pys/{on}", 'w', encoding="utf-8") #output.py
-                if j["nbformat"] >=4:
-                    for i,cell in enumerate(j["cells"]):
-                        if cell["cell_type"] == "code":
-                            for line in cell["source"]:
-                                of.write(line)
-                        of.write('\n\n')
-                else:
-                    for i,cell in enumerate(j["worksheets"][0]["cells"]):
-                        if cell["cell_type"] == "code":
-                            for line in cell["input"]:
-                                of.write(line)
-                        of.write('\n\n')
-                of.close()
-                
+                try:
+                    nb_file = open(f"{path}/{f}", "r", encoding="utf-8")
+                    try:
+                        j = json.load(nb_file)
+                        on = f.replace('.ipynb',"")+'.py'
+                        if ("nbformat" in j) and j["nbformat"] >=4:
+                            of = open(f"{path}/pys/{on}", 'w', encoding="utf-8") #output.py
+                            for i,cell in enumerate(j["cells"]):
+                                if cell["cell_type"] == "code":
+                                    for line in cell["source"]:
+                                        of.write(line)
+                                of.write('\n\n')
+                            of.close()
+                        elif ("worksheets" in j) and ("cells" in j["worksheets"][0]):
+                            of = open(f"{path}/pys/{on}", 'w', encoding="utf-8") #output.py
+                            for i,cell in enumerate(j["worksheets"][0]["cells"]):
+                                if cell["cell_type"] == "code":
+                                    for line in cell["input"]:
+                                        of.write(line)
+                                of.write('\n\n')
+                            of.close()
+                        else:
+                            print("wrong format of jupyter notebook", f)
+                        
+                    except json.decoder.JSONDecodeError:
+                        print("decoding error: {}".format(f))
+                    except Exception as err:
+                        print(f"Unexpected error converting to json {f}")
+                except FileNotFoundError:
+                    print(f"File {f} not found.  Aborting")
+                    sys.exit(1)
+                except OSError:
+                    print(f"OS error occurred trying to open {f}")
+                    sys.exit(1)
+                except Exception as err:
+                    print(f"Unexpected error opening {f}")
+                    sys.exit(1)
                 
                 
 def export_classes_from_modules(lib_names, export_path='lib_classes.pickle'):
