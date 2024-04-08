@@ -1,9 +1,18 @@
 top_lib_names = ["pandas","numpy","matplotlib","sklearn","seaborn","tensorflow","torch","xgboost","scipy","plotly","cv2","keras","lightgbm","torchvision","nltk","transformers","catboost","statsmodels","imblearn","wordcloud","missingno","optuna","skimage","datasets"]
 
-builtin_exps_excluded = ["nameerror", "keyboardinterrupt", "modulenotfounderror", "filenotfounderror", "importerror", "oserror", "memoryerror", "ioerror","unicodeerror"]
+builtin_exps_excluded = ["nameerror", "memoryerror", 
+                         "pendingdeprecationwarning", "userwarning", 
+                         "keyboardinterrupt", 
+                         "modulenotfounderror", "importerror", "notimplementederror", 
+                         "filenotfounderror", "fileexistserror", "isadirectoryerror", "notadirectoryerror","eoferror",  "permissionerror", "unicodeerror","unicodedecodeerror", 
+                         "oserror", "ioerror", "brokenpipeerror", "blockingioerror",
+                         "connectionerror", "connectionreseterror", "connectionrefusederror", "systemexit"]
 
-lib_percent_cutoff = 0.8
-err_lib_count_cutoff = 400
+err_lib_percent_cutoff_k = 0.5
+err_lib_count_cutoff_k = 100
+
+err_lib_percent_cutoff_g = 0.5
+err_lib_count_cutoff_g = 400
 
 check_lan_list =['assembly',
  'batchfile',

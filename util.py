@@ -377,20 +377,27 @@ def combine_pickles(list_pickle_paths, export_path):
         
         
 # df_err_lib_filtered is expected to have "lib_parsed" column which indicate the utermost crash library
-def select_builtin_exps(df_err_lib_filtered):
+# source is either github or kaggle
+def select_builtin_exps(df_err_lib_filtered, source):
     n_selected_exps = 0
     df_err_lib_filtered["lib_parsed_pop"] = df_err_lib_filtered['lib_parsed'].apply(lambda i: i if i in config.top_lib_names else None)
-    print("Selected exception types that meet the criterions:\n")
+    print("Selected exception types of {} that meet the criterions:\n".format(source))
     for builtin_exp in df_err_lib_filtered.ename.value_counts().index:
         # cutoff 1
         if builtin_exp in config.builtin_exps_excluded:
             continue
         df_err_builtin_exp = df_err_lib_filtered[df_err_lib_filtered["ename"]==builtin_exp]
         # cutoff 2
+        if source == "github":
+            cutoff_percent = config.err_lib_percent_cutoff_g
+            cutoff_count = config.err_lib_count_cutoff_g
+        else: # source="kaggle"
+            cutoff_percent = config.err_lib_percent_cutoff_k
+            cutoff_count = config.err_lib_count_cutoff_k
         libs_n = df_err_builtin_exp.lib_parsed_pop.value_counts()
         lib_percent = len(df_err_builtin_exp[~df_err_builtin_exp["lib_parsed_pop"].isnull()])/len(df_err_builtin_exp)
-        if len(df_err_builtin_exp)*lib_percent < config.err_lib_count_cutoff:
-            if lib_percent < config.lib_percent_cutoff:
+        if len(df_err_builtin_exp)*lib_percent <= cutoff_count:
+            if lib_percent <= cutoff_percent:
                 continue
         # select
         n_selected_exps += 1
