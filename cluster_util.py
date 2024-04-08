@@ -94,8 +94,8 @@ def cluster_kmeans(X_array, n_clusters=2, max_iter=500, random_state=28):
 
     return kmeans.labels_
 
-def cluster_optics(X_array, min_samples = 50):
-    optics = OPTICS(min_samples=min_samples).fit(X_array)
+def cluster_optics(X_array, min_samples = 50, metric = "minkowski"):
+    optics = OPTICS(min_samples=min_samples, metric=metric).fit(X_array)
     no_clusters = len(set(optics.labels_)) - (1 if -1 in optics.labels_ else 0) # -1 is noise
     no_noise = np.sum(np.array(optics.labels_) == -1, axis=0)
     print('Estimated no. of clusters: %d' % no_clusters)
