@@ -160,11 +160,15 @@ def eval_cluster_groundtruth(Y_true, X_array):
     print("Adjusted Rand Index (ARI): {:.3f}".format(ari))
     print("Normalized Mutual Information (NMI): {:.3f}".format(nmi))
     print("Fowlkes-Mallows Index (FMI): {:.3f}".format(fmi))
-        
+
+# reduce the dimensionality of the data using PCA 
+def pca(vectorized_arr, n_component = 2):
+    pca = PCA(n_components=n_component) 
+    reduced_data = pca.fit_transform(vectorized_arr)
+    return reduced_data
+    
 def plot_clusters(vectorized_texts, n_clusters, cluster_labels):
-    # reduce the dimensionality of the data using PCA 
-    pca = PCA(n_components=2) 
-    reduced_data = pca.fit_transform(vectorized_texts.toarray())
+    reduced_data = pca(vectorized_texts.toarray())
     
     # plot
     labels = list(map(str, range(n_clusters)))

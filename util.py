@@ -12,6 +12,7 @@ import pickle
 import config
 import builtins
 import matplotlib.pyplot as plt
+import config
 try:
     from guesslang import Guess
 except ImportError:
@@ -49,7 +50,24 @@ def get_evalue_ignored_from_traceback(row):
             if len(res)>0:
                 return res
     return None
-            
+
+def get_evalue_ignored_from_traceback_2(row):
+    txt_traceback = row["traceback"]
+    target_err = str(row["ename"]).strip().lower()
+    list_tbs = list_traceback(txt_traceback)
+    if list_tbs and len(list_tbs) > 0:
+        for j in range(len(list_tbs)-1,-1,-1):
+            list_last = list_tbs[j].split("\n")
+            for i in range(len(list_last)-1,-1,-1):
+                list_last_i = list_last[i].split(":")
+                if list_last_i and list_last_i[0].strip().lower()==target_err:
+                    if len(list_last_i)>1:
+                        res = list_last_i[1].strip()
+                        return res
+                    else:
+                        return ""
+    return None
+
 # def get_evalue_ignored_from_traceback(row, n_cha_cutoff = 150, min_alphanum_rate = 0.5):
 #     keyword = str(row['ename'])+':'
 #     parts = row['traceback'].rpartition(keyword)
@@ -200,6 +218,18 @@ def simple_lib_parser(libs_tar):
         return 'numpy'
     return lib_tar
     
+def lib_alias_isML(lib_alias):
+    if lib_alias:
+        try:
+            lib_alias = eval(lib_alias)
+            for imp in lib_alias:
+                
+                if imp[0] and (simple_lib_parser(imp[0]) in config.top_lib_names):
+                    return True
+        except:
+            return False
+    return False
+
 def extract_lib_2(row, df_imports, lib_names, lib_classes_dict):
     pattern_crash_line = re.compile('(--->\s*\d+\s*(.*))')
     pattern_obj = re.compile(r"'([^']+)'(?=\s+object)")
@@ -418,8 +448,7 @@ def get_python_exception_names():
         name for name, value in builtins.__dict__.items() 
         if isinstance(value, type) and issubclass(value, BaseException)
     ]
-    unwanted_exps = ["BaseException", "BaseExceptionGroup", "Exception", "ExceptionGroup"]
-    list_of_exception_names = [ele for ele in list_of_exception_names if ele not in unwanted_exps]
+    list_of_exception_names = [ele for ele in list_of_exception_names if ele not in config.exclude_base_exceptions]
     exception_list = [ele.lower() for ele in list_of_exception_names]
     return exception_list
 

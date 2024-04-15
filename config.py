@@ -1,18 +1,96 @@
+path_default = r"C:\Users\yirwa29\Downloads\Dataset-Nb"
+
+path_github_error_process = r"C:\Users\yirwa29\Downloads\Dataset-Nb\nbdata_g_error"
+path_github_error_analysis = r"C:\Users\yirwa29\Downloads\Dataset-Nb\nbdata_g_error\analysis_gerr"
+
+path_kaggle_error_process = r"C:\Users\yirwa29\Downloads\Dataset-Nb\nbdata_k_error"
+path_kaggle_error_analysis = r"C:\Users\yirwa29\Downloads\Dataset-Nb\nbdata_k_error\analysis_kerr"
+
+
 top_lib_names = ["pandas","numpy","matplotlib","sklearn","seaborn","tensorflow","torch","xgboost","scipy","plotly","cv2","keras","lightgbm","torchvision","nltk","transformers","catboost","statsmodels","imblearn","wordcloud","missingno","optuna","skimage","datasets"]
 
-builtin_exps_excluded = ["nameerror", "memoryerror", 
-                         "pendingdeprecationwarning", "userwarning", 
-                         "keyboardinterrupt", 
+builtin_exps_excluded = ["nameerror", "memoryerror", "keyboardinterrupt", "timeouterror", "windowserror",
+                         "pendingdeprecationwarning", "deprecationwarning", 
+                         "userwarning", "warning", "runtimewarning"
                          "modulenotfounderror", "importerror", "notimplementederror", 
-                         "filenotfounderror", "fileexistserror", "isadirectoryerror", "notadirectoryerror","eoferror",  "permissionerror", "unicodeerror","unicodedecodeerror", 
+                         "filenotfounderror", "fileexistserror", "isadirectoryerror", "notadirectoryerror","eoferror",  "permissionerror", "unicodeerror","unicodedecodeerror", "unicodeencodeerror"
                          "oserror", "ioerror", "brokenpipeerror", "blockingioerror",
-                         "connectionerror", "connectionreseterror", "connectionrefusederror", "systemexit"]
+                         "connectionerror", "connectionreseterror", "connectionrefusederror", "connectionabortederror", "systemexit"]
 
 err_lib_percent_cutoff_k = 0.5
 err_lib_count_cutoff_k = 100
 
 err_lib_percent_cutoff_g = 0.5
 err_lib_count_cutoff_g = 400
+
+exception_list_python = ['generatorexit',
+ 'keyboardinterrupt',
+ 'systemexit',
+ 'arithmeticerror',
+ 'assertionerror',
+ 'attributeerror',
+ 'buffererror',
+ 'eoferror',
+ 'importerror',
+ 'lookuperror',
+ 'memoryerror',
+ 'nameerror',
+ 'oserror',
+ 'referenceerror',
+ 'runtimeerror',
+ 'stopasynciteration',
+ 'stopiteration',
+ 'syntaxerror',
+ 'systemerror',
+ 'typeerror',
+ 'valueerror',
+ 'warning',
+ 'floatingpointerror',
+ 'overflowerror',
+ 'zerodivisionerror',
+ 'byteswarning',
+ 'deprecationwarning',
+ 'encodingwarning',
+ 'futurewarning',
+ 'importwarning',
+ 'pendingdeprecationwarning',
+ 'resourcewarning',
+ 'runtimewarning',
+ 'syntaxwarning',
+ 'unicodewarning',
+ 'userwarning',
+ 'blockingioerror',
+ 'childprocesserror',
+ 'connectionerror',
+ 'fileexistserror',
+ 'filenotfounderror',
+ 'interruptederror',
+ 'isadirectoryerror',
+ 'notadirectoryerror',
+ 'permissionerror',
+ 'processlookuperror',
+ 'timeouterror',
+ 'indentationerror',
+ 'indexerror',
+ 'keyerror',
+ 'modulenotfounderror',
+ 'notimplementederror',
+ 'recursionerror',
+ 'unboundlocalerror',
+ 'unicodeerror',
+ 'brokenpipeerror',
+ 'connectionabortederror',
+ 'connectionrefusederror',
+ 'connectionreseterror',
+ 'taberror',
+ 'unicodedecodeerror',
+ 'unicodeencodeerror',
+ 'unicodetranslateerror',
+ 'environmenterror',
+ 'ioerror',
+ 'windowserror']
+
+exclude_base_exceptions = ["BaseException", "BaseExceptionGroup", "Exception", "ExceptionGroup"]
 
 check_lan_list =['assembly',
  'batchfile',
