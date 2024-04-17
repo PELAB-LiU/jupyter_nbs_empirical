@@ -11,3 +11,6 @@ __pycache__/
 
 .idea
 
+.devcontainer
+.github
+data
