@@ -233,9 +233,6 @@ def lib_alias_isML(lib_alias):
 def extract_lib_2(row, df_imports, lib_names, lib_classes_dict):
     pattern_crash_line = re.compile('(--->\s*\d+\s*(.*))')
     pattern_obj = re.compile(r"'([^']+)'(?=\s+object)")
-    # rule 1
-#     if row["ename"] in error_type_ignore:
-#         return None
     df_import_tar = df_imports[df_imports.fname==row["fname"]]
     lib_alias = df_import_tar.lib_alias.iloc[0] if len(df_import_tar)>0 else []
     for lib_name in lib_names:
