@@ -49,10 +49,14 @@ def get_imports_nbs_static(path_tar, get_imports_func):
                     sys.exit(1)
     return res
 
-#  import xxx
+#  from/import xxx (import xxx) as xxx
 def get_imports_line_outermost(line):
     pattern = re.compile(r"^\s*(?:from|import)\s+(\w+(?:\s*,\s*\w+)*)")
-    return re.findall(pattern, line)
+    imps = re.findall(pattern, line)
+    imp_res = []
+    for imp in imps:
+        imp_res.extend([impsplit.strip() for impsplit in imp.split(",")])
+    return imp_res
 
 # from xxx import xxx as xxx
 def get_imports_line_all(line):
@@ -73,44 +77,54 @@ def get_lib_alias(imps):
         res.append(res_item)
     return res
 
-
-
-
-
-
-
-
-
-
-
+# get imports where the imports are actually used in the code
 # The code has to compile by ast parser for this to work
-def get_imports_nbs_outermost_ast(path_tar):
+def get_imports_nbs_outermost_ast(path_tar, get_imports_func):
     res = []
-    n_failed = 0
+    n_failed_py = 0
+    n_failed_ast = 0
     n_total = 0
     for path, subdirs, files in os.walk(path_tar):
         for f in files:
             if f.endswith(".ipynb"):
                 n_total += 1
-                if os.path.isfile(f"{path}/{f}"):
+                f_py = f.replace(".ipynb",".py")
+                path_py = f"{path}/{f_py}"
+                if os.path.isfile(path_py):
                     exit_code_convert_py = 0
                 else:
                     exit_code_convert_py = os.system('jupyter nbconvert --to python {:s}'.format(f"{path}/{f}"))
                 if exit_code_convert_py == 0:
-                    f_py = f.replace(".ipynb",".py")
-                    path_py = f"{path}/{f_py}"
-                    with open(path_py, encoding='utf-8') as fh:
-                        imports = get_imports_code_outermost(fh.read())
-                        if imports is None:
-                            n_failed += 1
-                            #print("Failed to ast parse", f_py)
-                        else:
-                            res.append({"fname":f, "imports":imports})
+                    imports = get_imports_func(path_py)
+                    if imports is None:
+                        n_failed_ast += 1
+                        print("Failed to ast parse", f_py)
+                    else:
+                        res.append({"fname":f, "imports":imports})
                 else:
-                    n_failed += 1
+                    n_failed_py += 1
                     print("Failed to convert to python file with exit code", exit_code_convert_py)
     print("total number of nbs processed:", n_total)
-    print("number of nbs that failed:", n_failed)
+    print("number of nbs that failed to convert to py:", n_failed_py)
+    print("number of pys that failed to parse to ast:", n_failed_ast)
+    return res
+
+def get_imports_pys_outermost_ast(path_tar, get_imports_func):
+    res = []
+    n_failed_ast = 0
+    n_total = 0
+    for path, subdirs, files in os.walk(path_tar):
+        for f_py in files:
+            if f_py.endswith(".py"):
+                n_total += 1
+                imports = get_imports_func(f"{path}/{f_py}")
+                if imports is None:
+                    n_failed_ast += 1
+                    print("Failed to ast parse", f_py)
+                else:
+                    res.append({"fname":f_py.replace(".py",".ipynb"), "imports":imports})
+    print("total number of pys processed:", n_total)
+    print("number of pys that failed to parse to ast:", n_failed_ast)
     return res
 
 def get_imports_py_outermost(path_py):
