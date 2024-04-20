@@ -1,3 +1,5 @@
+path_drive_kaggle = r"D:\Data_NBs\Kaggle"
+
 path_default = r"C:\Users\yirwa29\Downloads\Dataset-Nb"
 
 path_github_error_process = r"C:\Users\yirwa29\Downloads\Dataset-Nb\nbdata_g_error"

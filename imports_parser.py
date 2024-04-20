@@ -9,9 +9,11 @@ import sys
 # This is simply parse and match each line of code
 def get_imports_nbs_static(path_tar, get_imports_func):
     res = []
+    n_total = 0
     for path, subdirs, files in os.walk(path_tar):
         for f in files:
             if f.endswith(".ipynb"):
+                n_total += 1
                 try:
                     with open(f"{path}/{f}", "r", encoding="utf-8") as data_file:
                         try:
@@ -47,21 +49,49 @@ def get_imports_nbs_static(path_tar, get_imports_func):
                 except Exception as err:
                     print(f"Unexpected error opening {f}")
                     sys.exit(1)
+    print("Successfully parsed {0}/{1} notebook files, failed {2} ones.".format(len(res), n_total, n_total-len(res)))
     return res
 
 #  from/import xxx (import xxx) as xxx
 def get_imports_line_outermost(line):
-    pattern = re.compile(r"^\s*(?:from|import)\s+(\w+(?:\s*,\s*\w+)*)")
-    imps = re.findall(pattern, line)
+    line = line.strip()
+    pattern = re.compile(r"^\s*(?:from|import)\s+(\w+(?:\s,\s*\w+)*)")
+    pattern_next = re.compile(r"^(\w+(?:\s,\s*\w+)*)")
     imp_res = []
-    for imp in imps:
-        imp_res.extend([impsplit.strip() for impsplit in imp.split(",")])
+    imps = re.findall(pattern, line) # get the first match
+    if len(imps)>0:
+        lines = line.split('#')[0].split(';')[0].split(",")
+        if len(lines) > 0: # more than 1 imports
+            imps_first = re.findall(pattern, lines[0].strip()) # get the first match
+            if line.startswith("from"):
+                return imps_first
+            imp_res.extend(imps_first)
+            for i in range(1,len(lines),1):
+                #print(lines[i])
+                imps_next = re.findall(pattern_next, lines[i].strip())
+                #print(imps_next)
+                imp_res.extend(imps_next)
     return imp_res
 
 # from xxx import xxx as xxx
 def get_imports_line_all(line):
+    line = line.strip()
     pattern = re.compile(r"(?m)^(?:from[ ]+(\S+)[ ]+)?import[ ]+(\S+)(?:[ ]+as[ ]+(\S+))?[ ]*")
-    return re.findall(pattern, line)
+    pattern_next = re.compile(r"(?m)^(\S+)(?:[ ]+as[ ]+(\S+))?[ ]*")
+    imp_res = []
+    imps = re.findall(pattern, line) # if it is an import statement
+    if len(imps)>0:
+        lines = line.split('#')[0].split(';')[0].split(",")
+        if len(lines)>0: # more than 1 imports
+            imps_first = re.findall(pattern, lines[0].strip()) # get the first match
+            imp_res.extend(imps_first)
+            imps_next_from=[imps_first[0][0]]
+            for i in range(1,len(lines),1):
+                #print(lines[i])
+                imps_next = re.findall(pattern_next, lines[i].strip())
+                #print(imps_next)
+                imp_res.extend([tuple(imps_next_from+list(imp_next)) for imp_next in imps_next])
+    return imp_res
 
 # imported library name corresponding to alias in the code
 # will be import names if no alias has been defined
