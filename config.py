@@ -4,14 +4,17 @@ path_default = r"C:\Users\yirwa29\Downloads\Dataset-Nb"
 
 path_github_error_process = r"C:\Users\yirwa29\Downloads\Dataset-Nb\nbdata_g_error"
 path_github_error_analysis = r"C:\Users\yirwa29\Downloads\Dataset-Nb\nbdata_g_error\analysis_gerr"
+path_github_error_ast = path_default + "/nbdata_g_error_ast"
 
 path_kaggle_error_process = r"C:\Users\yirwa29\Downloads\Dataset-Nb\nbdata_k_error"
 path_kaggle_error_analysis = r"C:\Users\yirwa29\Downloads\Dataset-Nb\nbdata_k_error\analysis_kerr"
-
+path_kaggle_error_ast = path_default + "/nbdata_k_error_ast"
 
 top_lib_names = ["pandas","numpy","matplotlib","sklearn","seaborn","tensorflow","torch","xgboost","scipy","plotly","cv2","keras","lightgbm","torchvision","nltk","transformers","catboost","statsmodels","imblearn","wordcloud","missingno","optuna","skimage","datasets"]
 
-builtin_exps_excluded = ["nameerror", "memoryerror", "keyboardinterrupt", "timeouterror", "windowserror",
+builtin_exps_excluded = ["keyboardinterrupt"]
+
+builtin_exps_uninteresting = ["nameerror", "memoryerror", "keyboardinterrupt", "timeouterror", "windowserror",
                          "pendingdeprecationwarning", "deprecationwarning", 
                          "userwarning", "warning", "runtimewarning"
                          "modulenotfounderror", "importerror", "notimplementederror", 
