@@ -19,8 +19,14 @@ except ImportError:
     pass
 
 def parse_traceback(str_traceback):
+    """Parses the traceback to remove all ansii escape characters."""
     ansi_escape = re.compile(r'\\x1b\[[0-9;]*m') #re.compile(r'(?:\x1B[@-_]|[\x80-\x9F])[0-?]*[ -/]*[@-~]')
     return ansi_escape.sub('', str_traceback)
+
+def parse_traceback_2(str_traceback):
+    ansi_escape = re.compile(r'\x1B(?:[@-Z\\-_]|\[[0-?]*[ -/]*[@-~])')
+    result = ansi_escape.sub('', str_traceback)
+    return result
 
 def list_traceback(txt_traceback):
     try:
@@ -201,6 +207,7 @@ def extract_lib(txt_traceback):
         return None
 
 def simple_lib_parser(libs_tar):
+    """Returns the underlying library of the provided path."""
     if pd.isna(libs_tar):
         return None
     lib_tar = libs_tar.lower().split(",")[-1]
@@ -392,6 +399,8 @@ def export_classes_from_modules(lib_names, export_path='lib_classes.pickle'):
 
     with open(export_path, 'wb') as f:
         pickle.dump(lib_classes, f)
+
+    return lib_classes
         
 def combine_pickles(list_pickle_paths, export_path):
     res_dict = {}

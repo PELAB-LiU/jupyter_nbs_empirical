@@ -4,7 +4,7 @@ yirans_path_default = r"C:\Users\yirwa29\Downloads\Dataset-Nb"
 willems_path_default = "/workspaces/jupyter_nbs_empirical/data"
 path_default = Path(willems_path_default)
 
-print(f'{path_default=}')
+print(f"{path_default=}")
 
 path_github_error_process = path_default.joinpath("nbdata_g_error")
 path_github_error_analysis = path_github_error_process.joinpath("analysis_gerr")
@@ -69,7 +69,7 @@ builtin_exps_excluded = [
     "connectionreseterror",
     "connectionrefusederror",
     "connectionabortederror",
-    "systemexit",
+    "systemexit"
 ]
 
 err_lib_percent_cutoff_k = 0.5
