@@ -19,6 +19,9 @@ class NotebookToPythonMapper:
 
     def __enter__(self) -> "NotebookToPythonMapper":
         self.mapping = convert_notebook_to_python(self.__notebook_path)
+        if not self.__delete_py_file_on_exit:
+            print(f"{self.mapping.notebook_path=}")
+            print(f"{self.mapping.python_path=}")
         return self
 
     def __exit__(self, *_, **__):
@@ -28,12 +31,19 @@ class NotebookToPythonMapper:
     def get_python_line_number(self, cell_index: int, cell_line_number: int) -> int:
         return self.mapping.nb_to_py_line_mapping[cell_index][cell_line_number]
 
+    def get_python_line(self, cell_index: int, cell_line_number: int) -> str:
+        line_number = self.get_python_line_number(cell_index, cell_line_number)
+        line = self.mapping.python_lines[line_number]
+        return line
+
 
 @dataclass(frozen=True)
 class NotebookToPythonMapping:
     notebook_path: Path
     python_path: Path
     nb_to_py_line_mapping: Dict[int, Dict[int, int]]
+    python_lines: List[str]
+    notebook: Dict
 
 
 @dataclass(frozen=True)
@@ -47,11 +57,15 @@ class CellLineRange:
 def convert_notebook_to_python(notebook_path: Path) -> NotebookToPythonMapping:
     python_path = __convert(notebook_path)
     cell_line_ranges = __find_cell_line_ranges(python_path)
-    nb_to_py_lines_mapping = __map_all_nb_to_py_lines(
+    nb_to_py_lines_mapping, notebook, python_code = __map_all_nb_to_py_lines(
         python_path, notebook_path, cell_line_ranges
     )
     mapping = NotebookToPythonMapping(
-        notebook_path, python_path, nb_to_py_lines_mapping
+        notebook_path=notebook_path,
+        python_path=python_path,
+        nb_to_py_line_mapping=nb_to_py_lines_mapping,
+        python_lines=python_code,
+        notebook=notebook,
     )
     return mapping
 
@@ -140,9 +154,11 @@ def __map_all_nb_to_py_lines(
 
         cell_range = next(cell_ranges)
 
-        python_code_range = python_code[
-            cell_range.cell_line_range_start : cell_range.cell_line_range_end
-        ]
+        cell_range_start, cell_range_end = (
+            cell_range.cell_line_range_start,
+            cell_range.cell_line_range_end,
+        )
+        python_code_range = python_code[cell_range_start:cell_range_end]
 
         nb_code = cell["source"]
 
@@ -158,7 +174,7 @@ def __map_all_nb_to_py_lines(
 
         code_cell_index += 1
 
-    return nb_to_py_mapping
+    return nb_to_py_mapping, nb, python_code
 
 
 def __safe_add(a: Number | None, b: Number) -> Number | None:
@@ -178,19 +194,18 @@ def __map_nb_to_py_lines(
     # be mapped to python lines (e.g., magic NB methods).
     mapping = {nb_line_index: None for nb_line_index in range(len(notebook_lines))}
 
-    last_match_nb_line = 0
-    for py_line_index, py_line in enumerate(python_lines):
-        for nb_line_index, nb_line in enumerate(
-            notebook_lines[last_match_nb_line:], start=last_match_nb_line
+    last_py_line = 0
+    for nb_line_index, nb_line in enumerate(notebook_lines):
+        for py_line_index, py_line in enumerate(
+            python_lines[last_py_line:], start=last_py_line
         ):
             # The stripped string is used for comparison because of newlines
             # which might be present in one line but not in the other.
             is_match = py_line.strip() == nb_line.strip()
-            if not is_match:
-                continue
-
-            last_match_nb_line = nb_line_index
-            mapping[nb_line_index] = py_line_index
+            if is_match:
+                last_py_line = py_line_index + 1
+                mapping[nb_line_index] = py_line_index
+                break
 
     return mapping
 

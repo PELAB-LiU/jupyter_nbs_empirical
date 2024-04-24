@@ -14,7 +14,7 @@ class NotebookException:
 
 class Dictionariable:
     def to_dictionary(self):
-        pass
+        raise NotImplementedError()
 
 
 @dataclass
@@ -45,7 +45,7 @@ class ComponentImport(Dictionariable):
 
 
 @dataclass
-class CompositeComponentImport(ComponentImport):
+class CompositeComponentImport(ComponentImport, Dictionariable):
     def __init__(
         self, component_a: ComponentImport, component_b: ComponentImport
     ) -> None:
@@ -85,7 +85,7 @@ class CompositeComponentImport(ComponentImport):
 
 
 @dataclass
-class PackageImport:
+class PackageImport(Dictionariable):
     """Dataclass representing `import X as Y` statement, or `import X`
     if no alias is used."""
 

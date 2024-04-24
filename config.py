@@ -40,6 +40,10 @@ top_lib_names = [
     "datasets",
 ]
 
+exceptions_exclusion_list = [
+    "keyboardinterrupt",
+]
+
 builtin_exps_excluded = [
     "nameerror",
     "memoryerror",
@@ -69,7 +73,7 @@ builtin_exps_excluded = [
     "connectionreseterror",
     "connectionrefusederror",
     "connectionabortederror",
-    "systemexit"
+    "systemexit",
 ]
 
 err_lib_percent_cutoff_k = 0.5

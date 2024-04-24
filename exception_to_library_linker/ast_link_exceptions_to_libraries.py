@@ -6,8 +6,11 @@ It uses the Python abstract syntax tree for this.
 import ast
 from typing import List, Iterator, Set
 from pathlib import Path
+import copy
+import json
 
 from wmutils.collections.list_access import flatten
+from wmutils.multithreading import parallelize_tasks
 
 from exception_to_library_linker.notebook_exception import (
     get_raw_notebook_exceptions_from,
@@ -27,29 +30,89 @@ from exception_to_library_linker.objects import (
 from exception_to_library_linker.notebook_to_python_conversion import (
     NotebookToPythonMapper,
 )
+import config
 
 
-def link_exceptions_to_libraries(notebook_path: Path) -> Iterator[str | None]:
-    with NotebookToPythonMapper(
-        notebook_path, delete_py_file_on_exit=False
-    ) as nb_mapper:
-        return __link_exceptions_to_libraries(nb_mapper)
+LOG_UNSUPPORTED_STATEMENTS = False
+DELETE_PY_FILE_ON_EXIT = True
+
+
+# def parallel_link_many_nb_exceptions_to_ml_libraries(
+#     notebook_paths: Iterator[str],
+# ) -> List[List[List[PackageImport | ComponentImport]]]:
+
+#     results = parallelize_tasks(
+#         notebook_paths,
+#         on_task_received=__parallel_link_exceptions_to_ml_libraries,
+#         thread_count=1,
+#         return_results=True,
+#         use_early_return_results=True,
+#     )
+
+#     return results
+
+
+# def __parallel_link_exceptions_to_ml_libraries(task, *_, **__) -> str:
+#     """Identifies the links, makes data JSON parsable, and returns results as a string."""
+#     path = Path(task)
+#     ml_links = link_exceptions_to_ml_libraries(path)
+#     ml_links = [[ele.to_dictionary() for ele in link] for link in ml_links]
+#     j_data = json.dumps(ml_links)
+#     return j_data
+
+
+def link_many_nb_exceptions_to_ml_libraries(
+    notebook_paths: Iterator[Path],
+) -> Iterator[List[List[PackageImport | ComponentImport]]]:
+    for notebook_path in notebook_paths:
+        yield link_exceptions_to_ml_libraries(notebook_path)
+
+
+def link_exceptions_to_ml_libraries(
+    notebook_path: Path,
+) -> List[List[PackageImport | ComponentImport]]:
+    try:
+        with NotebookToPythonMapper(
+            notebook_path, delete_py_file_on_exit=DELETE_PY_FILE_ON_EXIT
+        ) as nb_mapper:
+            # Collects all libraries and removes everything that has no ML relevance.
+            libraries = __link_exceptions_to_libraries(nb_mapper)
+            ml_libraries = [__filter_non_ml_imports(libs) for libs in libraries]
+            ml_libraries = list(list(libs) for libs in ml_libraries)
+            return ml_libraries
+    except SyntaxError:
+        return []
 
 
 def __link_exceptions_to_libraries(
     nb_mapper: NotebookToPythonMapper,
 ) -> Iterator[Set[str]]:
 
-    py_ast = __build_python_ast(nb_mapper.mapping.python_path)
+    exception_exclusion_list = set(config.exceptions_exclusion_list)
+
+    try:
+        py_ast = __build_python_ast(nb_mapper.mapping.python_path)
+    except SyntaxError:
+        return
 
     # Loads imports from AST.
     package_imports = list(__get_package_imports(py_ast))
     component_imports = list(__get_component_imports(py_ast))
+    # HACK: This only works when you use methods that they both have, like `get_used_alias`.
+    imports: List[ComponentImport | PackageImport] = [
+        *component_imports,
+        *package_imports,
+    ]
 
     raw_excs = get_raw_notebook_exceptions_from(nb_mapper.mapping.notebook_path)
     for raw_exc in raw_excs:
+
+        if raw_exc.exception_name.lower() in exception_exclusion_list:
+            continue
+
         success, exc = try_parse_notebook_exception(raw_exception=raw_exc)
         if not success:
+            yield []
             continue
 
         # TODO: Yield these somehow without yielding duplicates.
@@ -58,15 +121,28 @@ def __link_exceptions_to_libraries(
         )
         used_libraries = set(used_libraries)
 
+        # Finds dependencies related to the statement itself.
         # TODO: We could probably filter this list, removing Python standard library functions / constants etc.
         vars = __get_exc_statement_variables(raw_exc, exc, nb_mapper, py_ast)
-        if not vars is None:
-            for var in vars:
-                # TODO: The performance of this process can probably be optimized by iterating through the assignments first instead of the varnames.
-                new_libraries = __find_libraries_in_var_assignments(
-                    py_ast, var, component_imports, package_imports
-                )
-                used_libraries = used_libraries.union(new_libraries)
+        used_vars = set()
+        for var in vars:
+            has_imp = False
+            for imp in imports:
+                if var == imp.get_used_alias():
+                    used_libraries.add(imp)
+                    has_imp = True
+            if not has_imp:
+                used_vars.add(var)
+
+        root_cause = get_root_exception(exc)
+        if isinstance(root_cause, NotebookStacktraceEntry):
+            py_line_number = __get_py_line_number(root_cause, nb_mapper)
+
+            # Attempts to link the identified variables to libraries through assignments in the notebook.
+            new_libraries = __find_libraries_in_var_assignments(
+                py_ast, used_vars, py_line_number, component_imports, package_imports
+            )
+            used_libraries = used_libraries.union(new_libraries)
 
         yield used_libraries
 
@@ -100,6 +176,13 @@ def __get_component_imports(py_ast: ast.Module) -> Iterator[ComponentImport]:
     )
     importfroms = flatten(importfroms)
     yield from importfroms
+
+
+def __filter_non_ml_imports(
+    imports: Iterator[PackageImport | ComponentImport],
+) -> Iterator[PackageImport | ComponentImport]:
+    inclusion_list = set(config.top_lib_names)
+    yield from [imp for imp in imports if imp.library in inclusion_list]
 
 
 def __build_python_ast(python_path: Path) -> ast.Module:
@@ -155,9 +238,7 @@ def __get_exc_statement_variables(
     if root_cause is None or not isinstance(root_cause, NotebookStacktraceEntry):
         return
 
-    py_line_number = nb_mapper.get_python_line_number(
-        raw_exc.cell_index, root_cause.exception_line_number - 1
-    )
+    py_line_number = __get_py_line_number(root_cause, nb_mapper)
 
     if py_line_number is None:
         return
@@ -169,10 +250,62 @@ def __get_exc_statement_variables(
     yield from leafs
 
 
+def __get_py_line_number(
+    root_cause: NotebookStacktraceEntry,
+    nb_mapper: NotebookToPythonMapper,
+) -> int:
+    """Helper method to do get pyhon line number magic."""
+    # TODO: Refactor this to not require 3 objects.
+
+    cell_index = root_cause.cell_index
+    if root_cause.cell_index is None:
+        # TODO: It would be better if this result is stored somewhere for reuse.
+        cell_index = __find_my_cell_index(root_cause, nb_mapper)
+
+    if cell_index is None or not isinstance(cell_index, int):
+        return None
+
+    try:
+        py_line_number = nb_mapper.get_python_line_number(
+            cell_index, root_cause.exception_line_number - 1
+        )
+        return py_line_number
+    except:
+        return None
+
+
+def __find_my_cell_index(
+    root_cause: NotebookStacktraceEntry, nb_mapper: NotebookToPythonMapper
+) -> int | None:
+    # HACK: The principle of this whole method is hacky. Optimally, there would be a better way to infer cell index from the stacktrace directly.
+
+    nb_cells_indices = nb_mapper.mapping.nb_to_py_line_mapping.keys()
+    for cell_index in nb_cells_indices:
+
+        is_match = True
+        for line_index, line in root_cause.previewed_lines.items():
+
+            try:
+                py_line = nb_mapper.get_python_line(cell_index, line_index - 1)
+            except:
+                is_match = False
+                break
+
+            py_line = py_line.strip()
+            if py_line != line:
+                is_match = False
+                break
+
+        if is_match:
+            return cell_index
+
+    return None
+
+
 def __find_exception_node(py_ast: ast.Module, exception_line_number: int) -> ast.expr:
     if "body" in py_ast.__dict__:
         for element in py_ast.body:
-            if element.end_lineno < exception_line_number:
+            if element.end_lineno <= exception_line_number:
                 continue
             return __find_exception_node(element, exception_line_number)
     return py_ast
@@ -218,7 +351,8 @@ def __iterate_through_leafs(expr: ast.expr) -> Iterator[str]:
             # Constants are ignored.
             pass
         case _:
-            print(f"Found unsupported type: {expr_type}.")
+            if LOG_UNSUPPORTED_STATEMENTS:
+                print(f"Found unsupported expression type: {expr_type}.")
 
     # Yields the results of its children.
     for child in children:
@@ -228,30 +362,69 @@ def __iterate_through_leafs(expr: ast.expr) -> Iterator[str]:
 
 def __find_libraries_in_var_assignments(
     py_ast: ast.Module,
-    var_name: str,
+    variables: Iterator[str],
+    exception_line_number: int,
     comp_imports: List[ComponentImport],
     pack_import: List[PackageImport],
 ) -> Iterator[str]:
-    for assignment in __find_assignments_in_ast(py_ast):
-        leafs = __find_relevant_assignment_sources(assignment, var_name)
 
-        # Compares the leafs with the imports to identify a relationship.
-        for leaf in leafs:
-            for comp in comp_imports:
-                if leaf == comp.get_used_alias():
-                    yield comp
+    variables: Set[str] = set(variables)
+    if len(variables) == 0:
+        return
 
-            for pack in pack_import:
-                if leaf == pack.get_used_alias():
-                    yield pack
+    # HACK: This only works when you use methods that they both have, like `get_used_alias`.
+    imports: List[ComponentImport | PackageImport] = [*comp_imports, *pack_import]
 
-        # TODO: Continue here. The var_name + assignment loops must be flipped. After, the var_name that was just assigned with some other var_name should be replaced.
+    assignments = __find_assignments_in_ast_in_reversed_order(
+        py_ast, exception_line_number
+    )
+    for assignment in assignments:
 
-def __find_assignments_in_ast(
-    py_ast: ast.Module,
+        # A copy is made to overwrite variables with their sources,
+        # making it possible to search nested assignments; i.e., when
+        # var `a` is assigned using variable `b`, which is assigned at
+        # some earlier stage.
+        updated_variables: Set[str] = copy.copy(variables)
+
+        for var_name in variables:
+            leafs = __find_relevant_assignment_sources(assignment, var_name)
+
+            # Compares the leafs with the imports to identify a relationship.
+            new_variables = set()
+            for leaf in leafs:
+                has_import = False
+                for imp in imports:
+                    if leaf == imp.get_used_alias():
+                        yield imp
+                        has_import = True
+                if not has_import:
+                    # If it is not a package name, it must be something assigned
+                    # in the code itself, which we will search for.
+                    new_variables.add(leaf)
+
+            if len(new_variables) > 0:
+                # Updates the target variable and adds the new ones.
+                # If the variable was assigned using itself, it will be present
+                # in the set of new variables. This is only necessary when the
+                # assignment was relevant.
+                updated_variables.remove(var_name)
+                updated_variables = updated_variables.union(new_variables)
+
+        # If there are no new variables, we stop searching.
+        if len(updated_variables) == 0:
+            break
+
+        variables = updated_variables
+
+
+def __find_assignments_in_ast_in_reversed_order(
+    py_ast: ast.Module, start_line: int
 ) -> Iterator[ast.Assign | ast.AnnAssign]:
-    for obj in py_ast.body:
-        yield from __find_assignments(obj)
+    """Yields the assignment objects in the AST in reversed order,
+    starting at the line number that was provided."""
+    for obj in py_ast.body[::-1]:
+        if obj.end_lineno <= start_line:
+            yield from __find_assignments(obj)
 
 
 def __find_assignments(
@@ -281,7 +454,8 @@ def __find_assignments(
             # TODO: This method currently ignores the walrus operator (i.e., ':=' / ast.NamedExpr).
             pass
         case _:
-            print(f"Found unsupported statement type {stmt_type}.")
+            if LOG_UNSUPPORTED_STATEMENTS:
+                print(f"Found unsupported statement type {stmt_type}.")
             pass
 
     for child in children:
@@ -292,18 +466,20 @@ def __find_assignments(
 def __find_relevant_assignment_sources(
     assignment: ast.Assign | ast.AnnAssign, var_name: str
 ) -> Iterator[str]:
-    if len(assignment.targets) > 1:
-        print(f"Found multiple assignments {assignment}")
+    if not isinstance(assignment, ast.AnnAssign) and len(assignment.targets) > 1:
+        print(f"Found multiple assignments {assignment}; this isn't supported.")
         return
 
+    if isinstance(assignment, ast.AnnAssign):
+        target = assignment.target
+    else:
+        target = assignment.targets[0]
+
     # Identifies whether the saught after variable is assigned.
-    is_relevant_assignment = (
-        isinstance(assignment.targets[0], ast.Name)
-        and assignment.targets[0].id == var_name
-    )
+    is_relevant_assignment = isinstance(target, ast.Name) and target.id == var_name
     source_index = -1
-    if not is_relevant_assignment and isinstance(assignment.targets[0], ast.Tuple):
-        for i, var in enumerate(assignment.targets[0].elts):
+    if not is_relevant_assignment and isinstance(target, ast.Tuple):
+        for i, var in enumerate(target.elts):
             if not isinstance(var, ast.Name) or var.id != var_name:
                 continue
             source_index = i
@@ -329,21 +505,97 @@ def __find_relevant_assignment_sources(
     elif isinstance(assignment.value, ast.expr):
         leafs = __iterate_through_leafs(assignment.value)
     else:
-        print(f"Found unsupported assignment type: {assignment.value}.")
+        if LOG_UNSUPPORTED_STATEMENTS:
+            print(f"Found unsupported assignment type: {assignment.value}.")
         return
 
     yield from leafs
 
 
 def __flatten_once(items: Iterator[Iterator]) -> Iterator:
+    """Helper method that yields the elements of a nested list with depth 1."""
     for sub_items in items:
         yield from sub_items
 
 
 if __name__ == "__main__":
+    from os import path
+    from wmutils.file import iterate_through_files_in_nested_folders
+    import tqdm
 
-    p = "/workspaces/jupyter_nbs_empirical/data/notebooks/nbdata_err_kaggle/nbdata_err_kaggle/nbdata_k_error/nbdata_k_error/2304/younggeng_notebookaa0e30a6b5.ipynb"
-    p = Path(p)
+    # Having a static path helps with debugging a specific notebook.
+    static_path = None
+    # static_path = "data/notebooks/nbdata_err_kaggle/nbdata_err_kaggle/nbdata_k_error/nbdata_k_error/230102/abdallahwagih_plant-stress-identification-acc-98-2.ipynb"
+    if not static_path:
+        # Loads all notebooks.
+        base_folder = "./data/notebooks/nbdata_err_kaggle/nbdata_err_kaggle/nbdata_k_error/nbdata_k_error/"
+        files = (
+            file
+            for file in iterate_through_files_in_nested_folders(
+                base_folder,
+                10_000,
+            )
+            if path.isfile(file)
+        )
+        DELETE_PY_FILE_ON_EXIT = True
+    else:
+        DELETE_PY_FILE_ON_EXIT = False
+        files = [static_path]
+    files = (Path(p) for p in files)
 
-    q = link_exceptions_to_libraries(p)
-    print(list(q))
+    # results = parallel_link_many_nb_exceptions_to_ml_libraries(files)
+
+    # Links the exceptions to ML libraries.
+    # And tests for how many NBs / exceptions it succeeded.
+    total_nbs = 0
+    total_nbs_with_exc = 0
+    total_exc = 0
+
+    tot_nbs_with_partial_links = 0
+    tot_nbs_with_all_links = 0
+    tot_exc_with_links = 0
+
+    for nb_path in tqdm.tqdm(files):
+        # Exceptions are traced for debugging reasons.
+        try:
+            ml_links = link_exceptions_to_ml_libraries(nb_path)
+        except:
+            print(nb_path)
+            raise
+
+        total_nbs += 1
+
+        if len(ml_links) > 0:
+            total_nbs_with_exc += 1
+
+            if all(len(link) > 0 for link in ml_links):
+                tot_nbs_with_all_links += 1
+
+            if any(len(link) > 0 for link in ml_links):
+                tot_nbs_with_partial_links += 1
+
+        total_exc += len(ml_links)
+        tot_exc_with_links += sum(1 if len(links) > 0 else 0 for links in ml_links)
+
+    print("\nResults:")
+
+    def __safe_cal_perc(count, total):
+        if total == 0:
+            return 0
+        return count / total * 100
+
+    print(
+        f"Notebooks with relevant exceptions and that can be parsed {total_nbs_with_exc}/{total_nbs} ({__safe_cal_perc(total_nbs_with_exc, total_nbs):.2f}%)"
+    )
+
+    print(
+        f"Notebooks with partial ML links {tot_nbs_with_partial_links}/{total_nbs_with_exc} ({__safe_cal_perc(tot_nbs_with_partial_links, total_nbs_with_exc):.2f}%)"
+    )
+
+    print(
+        f"Notebooks with all ML links {tot_nbs_with_all_links}/{total_nbs_with_exc} ({__safe_cal_perc(tot_nbs_with_all_links, total_nbs_with_exc):.2f}%)"
+    )
+
+    print(
+        f"Exceptions with ML links {tot_exc_with_links}/{total_exc} ({__safe_cal_perc(tot_exc_with_links, total_exc):.2f}%)"
+    )
