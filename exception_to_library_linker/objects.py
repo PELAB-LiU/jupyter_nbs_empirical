@@ -1,3 +1,7 @@
+"""
+Some data classes for the rest of the scripts in this folder.
+"""
+
 from dataclasses import dataclass
 
 

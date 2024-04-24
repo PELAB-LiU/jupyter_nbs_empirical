@@ -1,3 +1,9 @@
+"""
+Parallelizes linking exceptions to libraries by distirbuting files across threads.
+This script simply wraps `ast_link_exceptions_to_libraries`, so for any implementation
+logic refer to that.
+"""
+
 from typing import Iterator
 from pathlib import Path
 import os

@@ -1,3 +1,16 @@
+"""
+Implements conversion from jupyter notebooks to python files.
+In addition, it creates a mapping between the notebook code lines
+and their respective lines in the python script.
+
+You can use `convert_notebook_to_python` to convert your notebook to
+a `NotebookToPythonMapping` object, but it's recommended to use the
+`NotebookToPythonMapper` instead using a `with` clause.
+(i.e., `with NotebookToPythonMapper(path) as nb_mapper:`)
+This provides some utility methods to save you some headaches.
+FYI: In the mapping both the cell index and line numbers are zero-indexed.
+"""
+
 from pathlib import Path
 import nbformat
 from nbconvert import PythonExporter
