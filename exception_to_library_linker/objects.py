@@ -1,16 +1,5 @@
 from dataclasses import dataclass
 
-from typing import List
-
-
-@dataclass(frozen=True)
-class NotebookException:
-    """Data class representing an exception"""
-
-    ename: str = None
-    evalue: str = None
-    traceback: str = None
-
 
 class Dictionariable:
     def to_dictionary(self):

@@ -80,6 +80,8 @@ def __convert(notebook_path: Path) -> Path:
 
     # Convert notebook to Python script
     notebook = nbformat.reads(notebook_content, as_version=4)
+    # _, notebook = nbformat.validator.normalize(notebook)
+
     (python_script, _) = exporter.from_notebook_node(notebook)
 
     # Write the Python script to a file

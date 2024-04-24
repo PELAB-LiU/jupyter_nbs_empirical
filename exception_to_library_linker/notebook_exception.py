@@ -146,9 +146,7 @@ def get_root_exception(
                 break
         return last_notebook_entry
     else:
-        raise NotImplementedError(
-            f"Unsupported order type '{inner_error_root.stacktrace_order}'"
-        )
+        print(f'Found unsupported order type "{inner_error_root.stacktrace_order}"')
 
 
 def try_parse_notebook_exception(

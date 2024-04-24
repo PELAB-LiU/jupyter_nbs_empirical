@@ -7,10 +7,9 @@ import ast
 from typing import List, Iterator, Set
 from pathlib import Path
 import copy
-import json
 
 from wmutils.collections.list_access import flatten
-from wmutils.multithreading import parallelize_tasks
+from wmutils.collections.safe_dict import SafeDict
 
 from exception_to_library_linker.notebook_exception import (
     get_raw_notebook_exceptions_from,
@@ -30,35 +29,14 @@ from exception_to_library_linker.objects import (
 from exception_to_library_linker.notebook_to_python_conversion import (
     NotebookToPythonMapper,
 )
+from exception_to_library_linker.get_components_from_libraries import (
+    get_lib_classes_no_singleton,
+)
 import config
 
 
 LOG_UNSUPPORTED_STATEMENTS = False
 DELETE_PY_FILE_ON_EXIT = True
-
-
-# def parallel_link_many_nb_exceptions_to_ml_libraries(
-#     notebook_paths: Iterator[str],
-# ) -> List[List[List[PackageImport | ComponentImport]]]:
-
-#     results = parallelize_tasks(
-#         notebook_paths,
-#         on_task_received=__parallel_link_exceptions_to_ml_libraries,
-#         thread_count=1,
-#         return_results=True,
-#         use_early_return_results=True,
-#     )
-
-#     return results
-
-
-# def __parallel_link_exceptions_to_ml_libraries(task, *_, **__) -> str:
-#     """Identifies the links, makes data JSON parsable, and returns results as a string."""
-#     path = Path(task)
-#     ml_links = link_exceptions_to_ml_libraries(path)
-#     ml_links = [[ele.to_dictionary() for ele in link] for link in ml_links]
-#     j_data = json.dumps(ml_links)
-#     return j_data
 
 
 def link_many_nb_exceptions_to_ml_libraries(
@@ -161,6 +139,7 @@ def __get_package_imports(py_ast: ast.Module) -> Iterator[PackageImport]:
 
 
 def __get_component_imports(py_ast: ast.Module) -> Iterator[ComponentImport]:
+    # Loads all the import froms.
     importfroms = (imp for imp in py_ast.body if isinstance(imp, ast.ImportFrom))
     importfroms = (
         (
@@ -175,6 +154,23 @@ def __get_component_imports(py_ast: ast.Module) -> Iterator[ComponentImport]:
         for entry in importfroms
     )
     importfroms = flatten(importfroms)
+
+    # Replaces all `import * from` lib with all their components.
+    lib_classes = get_lib_classes_no_singleton()
+    lib_classes = SafeDict(initial_mapping=lib_classes, default_value=list)
+    importfroms = (
+        (
+            imp
+            if imp.component != "*"
+            else (
+                ComponentImport(imp.library, imp.package, comp)
+                for comp in lib_classes[imp.library]
+            )
+        )
+        for imp in importfroms
+    )
+    importfroms = flatten(importfroms)
+
     yield from importfroms
 
 
@@ -467,7 +463,8 @@ def __find_relevant_assignment_sources(
     assignment: ast.Assign | ast.AnnAssign, var_name: str
 ) -> Iterator[str]:
     if not isinstance(assignment, ast.AnnAssign) and len(assignment.targets) > 1:
-        print(f"Found multiple assignments {assignment}; this isn't supported.")
+        if LOG_UNSUPPORTED_STATEMENTS:
+            print(f"Found multiple assignments {assignment}; this isn't supported.")
         return
 
     if isinstance(assignment, ast.AnnAssign):
@@ -525,7 +522,7 @@ if __name__ == "__main__":
 
     # Having a static path helps with debugging a specific notebook.
     static_path = None
-    # static_path = "data/notebooks/nbdata_err_kaggle/nbdata_err_kaggle/nbdata_k_error/nbdata_k_error/230102/abdallahwagih_plant-stress-identification-acc-98-2.ipynb"
+    static_path = "data/notebooks/nbdata_err_kaggle/nbdata_err_kaggle/nbdata_k_error/nbdata_k_error/230102/abdallahwagih_plant-stress-identification-acc-98-2.ipynb"
     if not static_path:
         # Loads all notebooks.
         base_folder = "./data/notebooks/nbdata_err_kaggle/nbdata_err_kaggle/nbdata_k_error/nbdata_k_error/"
@@ -542,8 +539,6 @@ if __name__ == "__main__":
         DELETE_PY_FILE_ON_EXIT = False
         files = [static_path]
     files = (Path(p) for p in files)
-
-    # results = parallel_link_many_nb_exceptions_to_ml_libraries(files)
 
     # Links the exceptions to ML libraries.
     # And tests for how many NBs / exceptions it succeeded.

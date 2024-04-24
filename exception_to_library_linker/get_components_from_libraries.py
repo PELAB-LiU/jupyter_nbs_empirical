@@ -22,6 +22,11 @@ def get_lib_classes() -> Dict[str, List[str]]:
     return __LIB_CLASSES_DICT
 
 
+def get_lib_classes_no_singleton() -> Dict[str, List[str]]:
+    with open(PICKLE_PATH, "rb") as f:
+        return pickle.load(f)
+
+
 if __name__ == "__main__":
     lib_classes = get_lib_classes()
     print(lib_classes.keys())
