@@ -11,7 +11,7 @@ import config
 
 
 def parallel_link_exceptions_to_ml_libraries(
-    notebook_paths: Iterator[Path], thread_count: int = 8
+    notebook_paths: Iterator[Path], thread_count: int = 8, count_only: bool = False
 ) -> Path:
     """
     Does all the things `link_many_nb_exceptions_to_ml_libraries`
@@ -23,17 +23,18 @@ def parallel_link_exceptions_to_ml_libraries(
         "links_exceptions_to_libraries.jsonl"
     )
 
-    __setup_output_files(thread_count, tmp_data_dir, real_output_path)
+    if not count_only:
+        __setup_output_files(thread_count, tmp_data_dir, real_output_path)
 
-    parallelize_tasks(
-        tasks=notebook_paths,
-        on_task_received=__parallel_link_exceptions_to_ml_libraries,
-        thread_count=thread_count,
-        return_results=False,
-        tmp_data_dir=tmp_data_dir,
-    )
+        parallelize_tasks(
+            tasks=notebook_paths,
+            on_task_received=__parallel_link_exceptions_to_ml_libraries,
+            thread_count=thread_count,
+            return_results=False,
+            tmp_data_dir=tmp_data_dir,
+        )
 
-    __cleanup_output_files(thread_count, tmp_data_dir, real_output_path)
+        __cleanup_output_files(thread_count, tmp_data_dir, real_output_path)
 
     count_output(real_output_path)
 
@@ -99,9 +100,7 @@ def __append_file(source_file: Path, target_file: Path):
 
 def count_output(output_path: Path):
     with open(output_path, "r", encoding="utf-8") as output_file:
-        data = output_file.readlines
-
-        j_data = json.loads(line)
+        data = output_file.readlines()
 
     # Links the exceptions to ML libraries.
     # And tests for how many NBs / exceptions it succeeded.
@@ -167,4 +166,7 @@ if __name__ == "__main__":
         if file.endswith(".ipynb") and os.path.isfile(file)
     )
 
-    output_path = parallel_link_exceptions_to_ml_libraries(files, thread_count=8)
+    count_only = False
+    output_path = parallel_link_exceptions_to_ml_libraries(
+        files, thread_count=8, count_only=count_only
+    )
