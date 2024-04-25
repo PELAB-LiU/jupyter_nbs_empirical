@@ -1,17 +1,21 @@
 from pathlib import Path
 
+path_drive_kaggle = r"D:\Data_NBs\Kaggle"
+
 yirans_path_default = r"C:\Users\yirwa29\Downloads\Dataset-Nb"
 willems_path_default = "/workspaces/jupyter_nbs_empirical/data"
-path_default = Path(willems_path_default)
+path_default = Path(yirans_path_default)
 
 print(f"{path_default=}")
 
 path_github_error_process = path_default.joinpath("nbdata_g_error")
 path_github_error_analysis = path_github_error_process.joinpath("analysis_gerr")
+path_github_error_ast = path_default.joinpath("nbdata_g_error_ast")
+
 
 path_kaggle_error_process = path_default.joinpath("nbdata_k_error")
 path_kaggle_error_analysis = path_kaggle_error_process.joinpath("analysis_kerr")
-
+path_kaggle_error_ast = path_default.joinpath("nbdata_k_error_ast")
 
 top_lib_names = [
     "pandas",
@@ -43,38 +47,15 @@ top_lib_names = [
 exceptions_exclusion_list = [
     "keyboardinterrupt",
 ]
+builtin_exps_excluded = ["keyboardinterrupt"]
 
-builtin_exps_excluded = [
-    "nameerror",
-    "memoryerror",
-    "keyboardinterrupt",
-    "timeouterror",
-    "windowserror",
-    "pendingdeprecationwarning",
-    "deprecationwarning",
-    "userwarning",
-    "warning",
-    "runtimewarning" "modulenotfounderror",
-    "importerror",
-    "notimplementederror",
-    "filenotfounderror",
-    "fileexistserror",
-    "isadirectoryerror",
-    "notadirectoryerror",
-    "eoferror",
-    "permissionerror",
-    "unicodeerror",
-    "unicodedecodeerror",
-    "unicodeencodeerror" "oserror",
-    "ioerror",
-    "brokenpipeerror",
-    "blockingioerror",
-    "connectionerror",
-    "connectionreseterror",
-    "connectionrefusederror",
-    "connectionabortederror",
-    "systemexit",
-]
+builtin_exps_uninteresting = ["nameerror", "memoryerror", "keyboardinterrupt", "timeouterror", "windowserror",
+                         "pendingdeprecationwarning", "deprecationwarning", 
+                         "userwarning", "warning", "runtimewarning"
+                         "modulenotfounderror", "importerror", "notimplementederror", 
+                         "filenotfounderror", "fileexistserror", "isadirectoryerror", "notadirectoryerror","eoferror",  "permissionerror", "unicodeerror","unicodedecodeerror", "unicodeencodeerror"
+                         "oserror", "ioerror", "brokenpipeerror", "blockingioerror",
+                         "connectionerror", "connectionreseterror", "connectionrefusederror", "connectionabortederror", "systemexit"]
 
 err_lib_percent_cutoff_k = 0.5
 err_lib_count_cutoff_k = 100
