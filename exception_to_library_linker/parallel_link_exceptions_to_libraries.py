@@ -130,21 +130,23 @@ def count_output(output_path: Path):
 
     for line in data:
         j_data = json.loads(line)
-        ml_links = j_data["exc_to_lib_links"]["libraries"]
+        ml_links = j_data["exc_to_lib_links"]
 
         total_nbs += 1
 
         if len(ml_links) > 0:
             total_nbs_with_exc += 1
 
-            if all(len(link) > 0 for link in ml_links):
+            if all(len(link["libraries"]) > 0 for link in ml_links):
                 tot_nbs_with_all_links += 1
 
-            if any(len(link) > 0 for link in ml_links):
+            if any(len(link["libraries"]) > 0 for link in ml_links):
                 tot_nbs_with_partial_links += 1
 
         total_exc += len(ml_links)
-        tot_exc_with_links += sum(1 if len(links) > 0 else 0 for links in ml_links)
+        tot_exc_with_links += sum(
+            1 if len(links["libraries"]) > 0 else 0 for links in ml_links
+        )
 
     print("\nResults:")
 

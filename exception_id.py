@@ -13,7 +13,7 @@ def generate_uuid_for_nb_exception(
     are used.
     :param cell_index: The cell in which the exception was raised. This
     is the cell index in the note book (i.e., counting markdown cells
-    etc. as well).
+    etc. as well). This is zero-indexed.
     :param exception_name: The type of the exception.
     """
 
