@@ -72,7 +72,7 @@ def __link_exceptions_to_libraries(
     nb_mapper: NotebookToPythonMapper,
 ) -> Iterator[Tuple[UUID, Set[PackageImport | ComponentImport]]]:
 
-    exception_exclusion_list = set(config.exceptions_exclusion_list)
+    exception_exclusion_list = set(config.builtin_exps_excluded)
 
     try:
         py_ast = __build_python_ast(nb_mapper.mapping.python_path)

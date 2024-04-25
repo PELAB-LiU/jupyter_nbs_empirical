@@ -44,9 +44,6 @@ top_lib_names = [
     "datasets",
 ]
 
-exceptions_exclusion_list = [
-    "keyboardinterrupt",
-]
 builtin_exps_excluded = ["keyboardinterrupt"]
 
 builtin_exps_uninteresting = ["nameerror", "memoryerror", "keyboardinterrupt", "timeouterror", "windowserror",
