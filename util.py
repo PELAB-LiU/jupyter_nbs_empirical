@@ -42,22 +42,22 @@ def print_traceback(txt_traceback):
         for i in tb_list:
             print(i)
 
-def get_evalue_ignored_from_traceback(row):
-    txt_traceback = row["traceback"]
-    target_err = str(row["ename"]).strip().lower()
-    list_tbs = list_traceback(txt_traceback)
-    if list_tbs and len(list_tbs) > 0:
-        list_last = list_tbs[-1].split(":")
-        #print(list_last[0].strip().lower())
-        if list_last and list_last[0].strip().lower()==target_err:
-            if len(list_last) <= 1:
-                return ""
-            res = list_last[1].strip()
-            if len(res)>0:
-                return res
-    return None
+# def get_evalue_ignored_from_traceback(row):
+#     txt_traceback = row["traceback"]
+#     target_err = str(row["ename"]).strip().lower()
+#     list_tbs = list_traceback(txt_traceback)
+#     if list_tbs and len(list_tbs) > 0:
+#         list_last = list_tbs[-1].split(":")
+#         #print(list_last[0].strip().lower())
+#         if list_last and list_last[0].strip().lower()==target_err:
+#             if len(list_last) <= 1:
+#                 return ""
+#             res = list_last[1].strip()
+#             if len(res)>0:
+#                 return res
+#     return None
 
-def get_evalue_ignored_from_traceback_2(row):
+def get_evalue_ignored_from_traceback(row):
     txt_traceback = row["traceback"]
     target_err = str(row["ename"]).strip().lower()
     list_tbs = list_traceback(txt_traceback)
@@ -74,23 +74,25 @@ def get_evalue_ignored_from_traceback_2(row):
                         return ""
     return None
 
-# def get_evalue_ignored_from_traceback(row, n_cha_cutoff = 150, min_alphanum_rate = 0.5):
-#     keyword = str(row['ename'])+':'
-#     parts = row['traceback'].rpartition(keyword)
-#     if len(parts[2].strip()) > 0:
-#         # initial
-#         if len(parts[0]) <= 0 or not parts[0][-1] in(['\'', '\"']):
-#             rep = ''
-#         else:
-#             rep = parts[0][-1]
-#         value_can = parts[2].replace('\\n','').replace(rep+']','') # remove '] or "]
-#         if len(value_can.strip()) > 0:
-#             value_res = value_can.partition(rep+', ')[0].strip()
-#             if len(value_res) > 10:
-#                 alphanum_rate = len([c for c in value_res if c.isalnum()]) / len(value_res)
-#                 if alphanum_rate >= min_alphanum_rate:
-#                     return value_res[:n_cha_cutoff]
-#     return None
+def process_noisy_evalues(row, max_len=400):
+    evalue_lines = str(row.evalue).split("\n")
+    if len(evalue_lines) > 1: # only handling the noisy ones
+        evalue_line = evalue_lines[0]
+        # when first line is empty or "in user code:" is in the first line -> from the last line extract evalues starting with ename:
+        if len(evalue_line.strip()) <= 0 or ("in user code:" in evalue_line.lower()):
+            for i in range(len(evalue_lines)-1, 0, -1):
+                evalue_line_last = evalue_lines[i]
+                ename = str(row.ename)+":"
+                if len(evalue_line_last.strip())>0 and (ename in evalue_line_last.lower()):
+                    res = re.sub(ename,"", evalue_line_last, flags=re.IGNORECASE) ## remove error name
+                    #print(row.evalue,"\n---->>>",res.strip(),"\n\n")
+                    #print("---------------------------------------")
+                    return res.strip()[:max_len]
+        else:
+            #print(row.evalue,"\n---->>>",evalue_line.strip(),"\n\n")
+            #print("---------------------------------------")
+            return evalue_line.strip()[:max_len] # # take the first line
+    return None
 
 def nb_language_exact(path_tar, path_to, lan_list):
     total_notebook = 0

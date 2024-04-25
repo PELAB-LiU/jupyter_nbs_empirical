@@ -12,7 +12,6 @@ path_github_error_process = path_default.joinpath("nbdata_g_error")
 path_github_error_analysis = path_github_error_process.joinpath("analysis_gerr")
 path_github_error_ast = path_default.joinpath("nbdata_g_error_ast")
 
-
 path_kaggle_error_process = path_default.joinpath("nbdata_k_error")
 path_kaggle_error_analysis = path_kaggle_error_process.joinpath("analysis_kerr")
 path_kaggle_error_ast = path_default.joinpath("nbdata_k_error_ast")
