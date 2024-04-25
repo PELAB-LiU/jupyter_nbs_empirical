@@ -57,7 +57,9 @@ def __setup_output_files(thread_count: int, tmp_data_dir: Path, real_output_path
     for i in range(thread_count):
         worker_output_path = tmp_data_dir.joinpath(str(i))
         with open(worker_output_path, "w+") as worker_output_file:
+            worker_output_file.seek(0)
             worker_output_file.write("")
+            worker_output_file.truncate()
 
     with open(real_output_path, "w+", encoding="utf-8") as real_output_file:
         real_output_file.seek(0)
@@ -74,8 +76,16 @@ def __parallel_link_exceptions_to_ml_libraries(
     nb_path = task
 
     ml_links = link_exceptions_to_ml_libraries(nb_path)
-    ml_links = [[imp.to_dictionary() for imp in link] for link in ml_links]
-    json_entry = {"notebook": str(nb_path), "ml_links": ml_links}
+    ml_links = [
+        (
+            {
+                "exception_id:": str(exception_id),
+                "libraries": [imp.to_dictionary() for imp in link],
+            }
+        )
+        for exception_id, link in ml_links
+    ]
+    json_entry = {"notebook": str(nb_path), "exc_to_lib_links": ml_links}
     j_data = json.dumps(json_entry)
 
     output_path = tmp_data_dir.joinpath(str(worker_id))
@@ -120,7 +130,7 @@ def count_output(output_path: Path):
 
     for line in data:
         j_data = json.loads(line)
-        ml_links = j_data["ml_links"]
+        ml_links = j_data["exc_to_lib_links"]["libraries"]
 
         total_nbs += 1
 

@@ -4,9 +4,10 @@ It uses the Python abstract syntax tree for this.
 """
 
 import ast
-from typing import List, Iterator, Set
+from typing import List, Iterator, Set, Tuple
 from pathlib import Path
 import copy
+from uuid import UUID
 
 from wmutils.collections.list_access import flatten
 from wmutils.collections.safe_dict import SafeDict
@@ -41,22 +42,27 @@ DELETE_PY_FILE_ON_EXIT = True
 
 def link_many_nb_exceptions_to_ml_libraries(
     notebook_paths: Iterator[Path],
-) -> Iterator[List[List[PackageImport | ComponentImport]]]:
+) -> Iterator[List[List[Tuple[UUID, PackageImport | ComponentImport]]]]:
     for notebook_path in notebook_paths:
         yield link_exceptions_to_ml_libraries(notebook_path)
 
 
 def link_exceptions_to_ml_libraries(
     notebook_path: Path,
-) -> List[List[PackageImport | ComponentImport]]:
+) -> List[List[Tuple[UUID, PackageImport | ComponentImport]]]:
     try:
         with NotebookToPythonMapper(
             notebook_path, delete_py_file_on_exit=DELETE_PY_FILE_ON_EXIT
         ) as nb_mapper:
             # Collects all libraries and removes everything that has no ML relevance.
-            libraries = __link_exceptions_to_libraries(nb_mapper)
-            ml_libraries = [__filter_non_ml_imports(libs) for libs in libraries]
-            ml_libraries = list(list(libs) for libs in ml_libraries)
+            libraries_per_exception = __link_exceptions_to_libraries(nb_mapper)
+            ml_libraries = [
+                (exception, __filter_non_ml_imports(libs))
+                for exception, libs in libraries_per_exception
+            ]
+            ml_libraries = list(
+                (exception, list(libs)) for exception, libs in ml_libraries
+            )
             return ml_libraries
     except SyntaxError:
         return []
@@ -64,7 +70,7 @@ def link_exceptions_to_ml_libraries(
 
 def __link_exceptions_to_libraries(
     nb_mapper: NotebookToPythonMapper,
-) -> Iterator[Set[str]]:
+) -> Iterator[Tuple[UUID, Set[PackageImport | ComponentImport]]]:
 
     exception_exclusion_list = set(config.exceptions_exclusion_list)
 
@@ -90,7 +96,7 @@ def __link_exceptions_to_libraries(
 
         success, exc = try_parse_notebook_exception(raw_exception=raw_exc)
         if not success:
-            yield []
+            yield raw_exc.exception_id, []
             continue
 
         # TODO: Yield these somehow without yielding duplicates.
@@ -122,7 +128,7 @@ def __link_exceptions_to_libraries(
             )
             used_libraries = used_libraries.union(new_libraries)
 
-        yield used_libraries
+        yield exc.exception_id, used_libraries
 
 
 def __get_package_imports(py_ast: ast.Module) -> Iterator[PackageImport]:
@@ -557,6 +563,9 @@ if __name__ == "__main__":
         except:
             print(nb_path)
             raise
+
+        print(ml_links)
+        ml_links = [link[1] for link in ml_links]
 
         total_nbs += 1
 

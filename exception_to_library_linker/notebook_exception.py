@@ -10,6 +10,10 @@ import regex as re
 from typing import List, Dict, Tuple, Iterator, Callable
 from pathlib import Path
 import json
+from uuid import UUID
+
+from exception_id import generate_uuid_for_nb_exception
+
 
 _EXCEPTION_STACKTRACE_SPLIT = (
     "During handling of the above exception, another exception occurred:"
@@ -76,6 +80,7 @@ class RawNotebookException:
     exception_message: str
     cell_index: int
     notebook_path: Path
+    exception_id: UUID
 
 
 @dataclass(frozen=True)
@@ -86,6 +91,7 @@ class NotebookException:
     # i.e., all the entries separated by "During handling of the above exception, another exception occurred:"
     inner_errors: List[ExceptionStacktrace]
     source: str | RawNotebookException
+    exception_id: UUID
 
 
 def get_raw_notebook_exceptions_from(
@@ -112,12 +118,17 @@ def get_raw_notebook_exceptions_from(
             ansii_escape = re.compile(r"(?:\x1B[@-_]|[\x80-\x9F])[0-?]*[ -/]*[@-~]")
             stacktrace = ansii_escape.sub("", stacktrace)
 
+            exception_name = output["ename"]
+            exception_id = generate_uuid_for_nb_exception(
+                notebook_path, cell_index, exception_name
+            )
             exception = RawNotebookException(
                 stacktrace=stacktrace,
-                exception_name=output["ename"],
+                exception_name=exception_name,
                 exception_message=output["evalue"],
                 cell_index=cell_index,
                 notebook_path=notebook_path,
+                exception_id=exception_id,
             )
             yield exception
 
@@ -192,7 +203,10 @@ def parse_notebook_exception(
         )
         stacktraces.append(exception_stacktrace)
 
-    return NotebookException(inner_errors=stacktraces, source=source)
+    parsed_exception = NotebookException(
+        inner_errors=stacktraces, source=source, exception_id=raw_exception.exception_id
+    )
+    return parsed_exception
 
 
 def __identify_stacktrace_segments(
