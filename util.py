@@ -13,6 +13,7 @@ import config
 import builtins
 import matplotlib.pyplot as plt
 import config
+from exception_id import generate_uuid_for_nb_exception
 try:
     from guesslang import Guess
 except ImportError:
@@ -280,23 +281,25 @@ def extract_lib_2(row, df_imports, lib_names, lib_classes_dict):
     return None
 
 def is_contain_error_output(file_name, file_as_json):
-    cells = file_as_json["cells"]
     res = 0
     res_err = []
-    for i in range(0, len(cells), 1):
-        if cells[i]["cell_type"] == "code" and cells[i]["outputs"]:
-            for output in cells[i]["outputs"]:
+    for cell_index, cell in enumerate(file_as_json["cells"]):
+        if cell["cell_type"] == "code" and "outputs" in cell:
+            for output in cell["outputs"]:
                 if output["output_type"]=="error":
 #                     if output["ename"] in ['FileNotFoundError', 'KeyboardInterrupt']: #ignore error types
 #                         continue
 #                     print(output["ename"])
                     res = 1
-                    res_err.append((file_name, output["ename"], output["evalue"], output["traceback"]))
+                    exception_id = generate_uuid_for_nb_exception(
+                        file_name, cell_index, output["ename"])
+                    res_err.append((file_name, exception_id, output["ename"], output["evalue"], output["traceback"]))
     return res, res_err
 
-def filter_notebooks_with_errors(path_tar, path_des = None, path_des2 = None, is_resave = True):
+def filter_notebooks_with_errors(path_tar, is_resave = False, path_des = None):
     total_notebook = 0
 #     total_notebook2 = 0
+    cell_index = 0
     n_decoding_error = 0
     res_errs = []
     print("\nStarted filtering:")
@@ -313,13 +316,6 @@ def filter_notebooks_with_errors(path_tar, path_des = None, path_des2 = None, is
                         if res == 1:
                             total_notebook += 1
                             if is_resave: shutil.copyfile(f"{path}/{f}", f"{path_des}/{f}")
-    #                         #special attention errors
-    #                         for t in res_err:
-    #                             if t[0] in ['ValueError']: 
-    #                                 total_notebook2 += 1
-    #                                 if is_resave: shutil.copyfile(f"{path}/{f}", f"{path_des2}/{f}")
-    #                                 break
-                        # save err infomation
                         if res > 0:
                             res_errs.extend(res_err)
 
@@ -334,7 +330,7 @@ def filter_notebooks_with_errors(path_tar, path_des = None, path_des2 = None, is
     print("\nTotal number of notebooks containing error: {}".format(total_notebook))
 #     print("Total number of notebooks containing ValueError: {}".format(total_notebook2))
     print("Total number of notebooks that cannot be decoded: {}".format(n_decoding_error))
-    return pd.DataFrame(res_errs, columns=['fname', 'ename', 'evalue', 'traceback'])
+    return pd.DataFrame(res_errs, columns=['fname', 'eid', 'ename', 'evalue', 'traceback'])
 
 def nb_to_py(path_tar):
     for path, subdirs, files in os.walk(path_tar):

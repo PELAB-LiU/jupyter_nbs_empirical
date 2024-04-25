@@ -7,10 +7,8 @@ import re
 import tree_sitter_python as tspython
 from tree_sitter import Language, Parser
 
-def parse_nbs_to_asts(path_tar, path_ast, parse_func, parser=None):
-    res = []
+def parse_nbs_to_py(path_tar):
     n_failed_py = 0
-    n_failed_ast = 0
     n_total = 0
     for path, subdirs, files in os.walk(path_tar):
         for f in files:
@@ -22,22 +20,11 @@ def parse_nbs_to_asts(path_tar, path_ast, parse_func, parser=None):
                     exit_code_convert_py = 0
                 else:
                     exit_code_convert_py = os.system('jupyter nbconvert --to python {:s}'.format(f"{path}/{f}"))
-                if exit_code_convert_py == 0:
-                    export_f = f.replace(".ipynb","_ast.pickle")
-                    export_path = f"{path_ast}/{export_f}"
-                    is_parsed = parse_py_ast(path_py, export_path, parse_func, parser)
-                    if not is_parsed:
-                        n_failed_ast += 1
-                        print("Failed to ast parse", f_py)
-                    else:
-                        res.append({"fname":f.replace(".py",".ipynb"), "fast":export_f})
-                else:
+                if exit_code_convert_py != 0:
                     n_failed_py += 1
                     print("Failed to convert to python file with exit code", exit_code_convert_py)
     print("total number of nbs processed:", n_total)
     print("number of nbs that failed to convert to py:", n_failed_py)
-    print("number of pys that failed to parse to ast:", n_failed_ast)
-    return pd.DataFrame(res, columns=['fname', 'fast'])
 
 def parse_pys_to_asts(path_tar, path_ast, parse_func, parser=None):
     res = []
@@ -60,6 +47,24 @@ def parse_pys_to_asts(path_tar, path_ast, parse_func, parser=None):
     print("number of pys that failed to parse to ast:", n_failed_ast)
     return pd.DataFrame(res, columns=['fname', 'fast'])
 
+def if_parse_pys_to_asts(path_tar, parse_func, parser=None):
+    res = []
+    n_failed_ast = 0
+    n_total = 0
+    for path, subdirs, files in os.walk(path_tar):
+        for f in files:
+            if f.endswith(".py"):
+                n_total += 1
+                path_py = f"{path}/{f}"
+                is_parsed = parse_py_ast(path_py, None, parse_func, parser)
+                if not is_parsed:
+                    n_failed_ast += 1
+                    print("Failed to ast parse", f)
+                res.append({"fname":f.replace(".py",".ipynb"), "if_ast":is_parsed})
+    print("total number of pys processed:", n_total)
+    print("number of pys that failed to parse to ast:", n_failed_ast)
+    return pd.DataFrame(res, columns=['fname', 'if_ast'])
+
 def parse_py_ast(path_py, export_path, parse_func, parser=None):
     if path_py.endswith(".py"):
         with open(path_py, encoding='utf-8') as fh:
@@ -71,10 +76,9 @@ def parse_code_ast(code, export_path, parser=None):
         root = ast.parse(code)
     except:
         return False
-    
-    with open(export_path, 'wb') as f:
-        pickle.dump(root, f)
-        
+    if export_path:
+        with open(export_path, 'wb') as f:
+            pickle.dump(root, f)
     return True
 
 def py23_setup_parser():
@@ -97,8 +101,9 @@ def parse_code_ast_py23(code, export_path, parser):
     tree = parser.parse(bytes(code, "utf8",))
     if if_error_nodes(tree.root_node): # if error when parsing
         return False
-#     with open(export_path, 'wb') as f: # TypeError: cannot pickle 'tree_sitter.Node' object
-#         pickle.dump(tree.root_node, f)
+#     if export_path:
+#         with open(export_path, 'wb') as f: # TypeError: cannot pickle 'tree_sitter.Node' object
+#             pickle.dump(tree.root_node, f)
     return True
 
 def check_python_version(nb_meta_data):
@@ -151,4 +156,38 @@ def nb_python_version_exact(path_tar):
     print("Total number of notebooks have python version info from metadata: {}".format(n_pyv))
     print("Total number of notebooks that cannot be decoded: {}".format(n_decoding_error))
     return pd.DataFrame(res, columns=['fname', 'python_version'])
-    
+
+
+# the following function is not needed
+# parse nb to ast: parse nb to py, parse py to ast
+def parse_nbs_to_asts(path_tar, path_ast, parse_func, parser=None):
+    res = []
+    n_failed_py = 0
+    n_failed_ast = 0
+    n_total = 0
+    for path, subdirs, files in os.walk(path_tar):
+        for f in files:
+            if f.endswith(".ipynb"):
+                n_total += 1
+                f_py = f.replace(".ipynb",".py")
+                path_py = f"{path}/{f_py}"
+                if os.path.isfile(path_py):
+                    exit_code_convert_py = 0
+                else:
+                    exit_code_convert_py = os.system('jupyter nbconvert --to python {:s}'.format(f"{path}/{f}"))
+                if exit_code_convert_py == 0:
+                    export_f = f.replace(".ipynb","_ast.pickle")
+                    export_path = f"{path_ast}/{export_f}"
+                    is_parsed = parse_py_ast(path_py, export_path, parse_func, parser)
+                    if not is_parsed:
+                        n_failed_ast += 1
+                        print("Failed to ast parse", f_py)
+                    else:
+                        res.append({"fname":f.replace(".py",".ipynb"), "fast":export_f})
+                else:
+                    n_failed_py += 1
+                    print("Failed to convert to python file with exit code", exit_code_convert_py)
+    print("total number of nbs processed:", n_total)
+    print("number of nbs that failed to convert to py:", n_failed_py)
+    print("number of pys that failed to parse to ast:", n_failed_ast)
+    return pd.DataFrame(res, columns=['fname', 'fast'])
