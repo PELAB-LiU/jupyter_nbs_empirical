@@ -12,12 +12,30 @@ import pickle
 import config
 import builtins
 import matplotlib.pyplot as plt
-import config
+from pathlib import Path
 from exception_id import generate_uuid_for_nb_exception
 try:
     from guesslang import Guess
 except ImportError:
     pass
+
+def get_exp_mllib(path_exp_libs, df_err):
+    res = {eid:None for eid in df_err.eid}
+    with open(path_exp_libs, "r", encoding="utf-8") as output_file:
+        data = output_file.readlines()
+        
+    for line in data:
+        j_data = json.loads(line)
+        ml_links = j_data["exc_to_lib_links"]
+        if len(ml_links) > 0:
+            for ml_link in ml_links:
+                eid = ml_link["exception_id:"]
+                if eid in res:
+                    if len(ml_link["libraries"]) > 0:
+                        res[eid] = ml_link["libraries"]
+#                 else:
+#                     print("Error id not exist in error dataset:", Path(j_data["notebook"]).name, eid)
+    return res
 
 def parse_traceback(str_traceback):
     """Parses the traceback to remove all ansii escape characters."""
@@ -185,30 +203,6 @@ def simple_language_parser(lan_tar, lan_list):
             return lan_c
     return lan_tar
 
-def extract_lib(txt_traceback):
-    txt_traceback = txt_traceback.replace("\\\\", "/")
-    #print(txt_traceback)
-    pattern = re.compile(r'(\/.*?\/)((?:[^\/]|\\\/)+?)(?:(?<!\\)\s|$)')
-    pattern2 = re.compile(r'(\-packages/+.*?\/)')
-    matches = re.findall(pattern, txt_traceback)
-    #print(matches)
-    libs = []
-    
-    for mat in matches:
-        if "-packages/" in mat[0]:
-            matc = re.search(pattern2, mat[0])
-            if matc:
-                libs.append(matc.group(1)[10:-1])
-            else:
-                matc_1 = mat[1].split(".py")
-                if len(matc_1)>0:
-                    libs.append(matc_1[0])
-    libs = set(libs)
-    if len(libs)>0:
-        return ",".join(libs)
-    else:
-        return None
-
 def simple_lib_parser(libs_tar):
     """Returns the underlying library of the provided path."""
     if pd.isna(libs_tar):
@@ -240,45 +234,69 @@ def lib_alias_isML(lib_alias):
             return False
     return False
 
-def extract_lib_2(row, df_imports, lib_names, lib_classes_dict):
-    pattern_crash_line = re.compile('(--->\s*\d+\s*(.*))')
-    pattern_obj = re.compile(r"'([^']+)'(?=\s+object)")
-    df_import_tar = df_imports[df_imports.fname==row["fname"]]
-    lib_alias = df_import_tar.lib_alias.iloc[0] if len(df_import_tar)>0 else []
-    for lib_name in lib_names:
-        # rule 2.1
-        if isinstance(row["evalue"],str) and (lib_name in row["evalue"]):
-            return lib_name
-        # rule 4
-        if isinstance(row["evalue"],str):
-            obj_mat = re.findall(pattern_obj, row["evalue"])
-            if len(obj_mat)>0:
-                for k, v in lib_classes_dict.items():
-                    if obj_mat[0] in v:
-                        return k
-        # get alias for this lib_name
-        if len(lib_alias)<=0:
-            continue
-        alias = []
-        for t in eval(lib_alias):
-            if t[0]==lib_name:
-                alias.append(t[1])
-        tb_list = list_traceback(row["traceback"]) # util.
-        # rule 2.2
-        if tb_list:
-            for i in range(len(tb_list)-1, -1, -1):
-                lines = tb_list[i].replace("\\n","\n").split("\n")
-                for line in lines:
-                    crash_code_mat = re.findall(pattern_crash_line, line)
-                    if len(crash_code_mat)>0 and len(crash_code_mat[0])>1:
-                        crash_code = crash_code_mat[0][1]
-                        #print(crash_code)
-                        if "=" in crash_code:
-                            parts = crash_code.split("=", 1)
-                            if len(parts)>1 and len(alias)>0:
-                                if any(alia in parts[1].strip() for alia in alias):
-                                    return lib_name 
-    return None
+# def extract_lib(txt_traceback):
+#     txt_traceback = txt_traceback.replace("\\\\", "/")
+#     #print(txt_traceback)
+#     pattern = re.compile(r'(\/.*?\/)((?:[^\/]|\\\/)+?)(?:(?<!\\)\s|$)')
+#     pattern2 = re.compile(r'(\-packages/+.*?\/)')
+#     matches = re.findall(pattern, txt_traceback)
+#     #print(matches)
+#     libs = []
+    
+#     for mat in matches:
+#         if "-packages/" in mat[0]:
+#             matc = re.search(pattern2, mat[0])
+#             if matc:
+#                 libs.append(matc.group(1)[10:-1])
+#             else:
+#                 matc_1 = mat[1].split(".py")
+#                 if len(matc_1)>0:
+#                     libs.append(matc_1[0])
+#     libs = set(libs)
+#     if len(libs)>0:
+#         return ",".join(libs)
+#     else:
+#         return None
+    
+# def extract_lib_2(row, df_imports, lib_names, lib_classes_dict):
+#     pattern_crash_line = re.compile('(--->\s*\d+\s*(.*))')
+#     pattern_obj = re.compile(r"'([^']+)'(?=\s+object)")
+#     df_import_tar = df_imports[df_imports.fname==row["fname"]]
+#     lib_alias = df_import_tar.lib_alias.iloc[0] if len(df_import_tar)>0 else []
+#     for lib_name in lib_names:
+#         # rule 2.1
+#         if isinstance(row["evalue"],str) and (lib_name in row["evalue"]):
+#             return lib_name
+#         # rule 4
+#         if isinstance(row["evalue"],str):
+#             obj_mat = re.findall(pattern_obj, row["evalue"])
+#             if len(obj_mat)>0:
+#                 for k, v in lib_classes_dict.items():
+#                     if obj_mat[0] in v:
+#                         return k
+#         # get alias for this lib_name
+#         if len(lib_alias)<=0:
+#             continue
+#         alias = []
+#         for t in eval(lib_alias):
+#             if t[0]==lib_name:
+#                 alias.append(t[1])
+#         tb_list = list_traceback(row["traceback"]) # util.
+#         # rule 2.2
+#         if tb_list:
+#             for i in range(len(tb_list)-1, -1, -1):
+#                 lines = tb_list[i].replace("\\n","\n").split("\n")
+#                 for line in lines:
+#                     crash_code_mat = re.findall(pattern_crash_line, line)
+#                     if len(crash_code_mat)>0 and len(crash_code_mat[0])>1:
+#                         crash_code = crash_code_mat[0][1]
+#                         #print(crash_code)
+#                         if "=" in crash_code:
+#                             parts = crash_code.split("=", 1)
+#                             if len(parts)>1 and len(alias)>0:
+#                                 if any(alia in parts[1].strip() for alia in alias):
+#                                     return lib_name 
+#     return None
 
 def is_contain_error_output(file_name, file_as_json):
     res = 0
