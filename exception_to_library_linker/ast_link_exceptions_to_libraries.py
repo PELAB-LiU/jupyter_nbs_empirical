@@ -48,11 +48,11 @@ def link_many_nb_exceptions_to_ml_libraries(
 
 
 def link_exceptions_to_ml_libraries(
-    notebook_path: Path,
+    notebook_path: Path, python_path: Path | None = None
 ) -> List[List[Tuple[UUID, PackageImport | ComponentImport]]]:
     try:
         with NotebookToPythonMapper(
-            notebook_path, delete_py_file_on_exit=DELETE_PY_FILE_ON_EXIT
+            notebook_path, python_path, delete_py_file_on_exit=DELETE_PY_FILE_ON_EXIT
         ) as nb_mapper:
             # Collects all libraries and removes everything that has no ML relevance.
             libraries_per_exception = __link_exceptions_to_libraries(nb_mapper)
@@ -65,6 +65,7 @@ def link_exceptions_to_ml_libraries(
             )
             return ml_libraries
     except SyntaxError:
+        print(f"Couldn't create AST in file {notebook_path=}, {python_path=}")
         return []
 
 
@@ -77,6 +78,7 @@ def __link_exceptions_to_libraries(
     try:
         py_ast = __build_python_ast(nb_mapper.mapping.python_path)
     except SyntaxError:
+        print(f"Couldn't create AST in file {nb_mapper.mapping.notebook_path=}")
         return
 
     # Loads imports from AST.
@@ -147,6 +149,8 @@ def __get_package_imports(py_ast: ast.Module) -> Iterator[PackageImport]:
 def __get_component_imports(py_ast: ast.Module) -> Iterator[ComponentImport]:
     # Loads all the import froms.
     importfroms = (imp for imp in py_ast.body if isinstance(imp, ast.ImportFrom))
+    # HACK: idk why, but this solves multithreading issues.
+    q = list(importfroms)
     importfroms = (
         (
             ComponentImport(
@@ -273,6 +277,9 @@ def __get_py_line_number(
         )
         return py_line_number
     except:
+        print(
+            f"Couldn't find python line number {nb_mapper.mapping.notebook_path=}, {cell_index=}, {root_cause.exception_line_number=}"
+        )
         return None
 
 
@@ -528,7 +535,7 @@ if __name__ == "__main__":
 
     # Having a static path helps with debugging a specific notebook.
     static_path = None
-    static_path = "data/notebooks/nbdata_err_kaggle/nbdata_err_kaggle/nbdata_k_error/nbdata_k_error/230102/abdallahwagih_plant-stress-identification-acc-98-2.ipynb"
+    static_path = "data/harddrive/GitHub/nbdata_error_g/nbdata_g_error_100-199/00100-7-ch21-mongodb.ipynb"
     if not static_path:
         # Loads all notebooks.
         base_folder = "./data/notebooks/nbdata_err_kaggle/nbdata_err_kaggle/nbdata_k_error/nbdata_k_error/"

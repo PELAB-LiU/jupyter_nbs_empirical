@@ -24,14 +24,18 @@ from numbers import Number
 
 class NotebookToPythonMapper:
     def __init__(
-        self, notebook_path: Path, delete_py_file_on_exit: bool = True
+        self,
+        notebook_path: Path,
+        python_path: Path | None = None,
+        delete_py_file_on_exit: bool = True,
     ) -> None:
         self.__notebook_path = notebook_path
+        self.__python_path = python_path
         self.__delete_py_file_on_exit = delete_py_file_on_exit
         self.mapping: NotebookToPythonMapping | None = None
 
     def __enter__(self) -> "NotebookToPythonMapper":
-        self.mapping = convert_notebook_to_python(self.__notebook_path)
+        self.mapping = convert_notebook_to_python(self.__notebook_path, self.__python_path)
         if not self.__delete_py_file_on_exit:
             print(f"{self.mapping.notebook_path=}")
             print(f"{self.mapping.python_path=}")
@@ -67,8 +71,11 @@ class CellLineRange:
     cell_line_range_end: int
 
 
-def convert_notebook_to_python(notebook_path: Path) -> NotebookToPythonMapping:
-    python_path = __convert(notebook_path)
+def convert_notebook_to_python(
+    notebook_path: Path, python_path: Path | None = None
+) -> NotebookToPythonMapping:
+    if python_path is None:
+        python_path = __convert(notebook_path)
     cell_line_ranges = __find_cell_line_ranges(python_path)
     nb_to_py_lines_mapping, notebook, python_code = __map_all_nb_to_py_lines(
         python_path, notebook_path, cell_line_ranges

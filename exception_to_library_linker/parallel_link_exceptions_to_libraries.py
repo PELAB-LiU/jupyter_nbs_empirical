@@ -8,16 +8,24 @@ from typing import Iterator
 from pathlib import Path
 import os
 from wmutils.multithreading import parallelize_tasks
+from wmutils.collections.safe_dict import SafeDict
 import json
+import traceback
 
 from exception_to_library_linker.ast_link_exceptions_to_libraries import (
     link_exceptions_to_ml_libraries,
+)
+from exception_to_library_linker.nb_python_path_mapper import (
+    many_quick_create_notebook_to_python_mapping,
 )
 import config
 
 
 def parallel_link_exceptions_to_ml_libraries(
-    notebook_paths: Iterator[Path], thread_count: int = 8, count_only: bool = False
+    notebook_paths: Iterator[Path],
+    thread_count: int = 8,
+    count_only: bool = False,
+    use_cached_py_files: bool = False,
 ) -> Path:
     """
     Does all the things `link_many_nb_exceptions_to_ml_libraries`
@@ -32,8 +40,23 @@ def parallel_link_exceptions_to_ml_libraries(
     if not count_only:
         __setup_output_files(thread_count, tmp_data_dir, real_output_path)
 
+        # Sets standard tasks.
+        tasks = {
+            nb_path: {"nb_path": nb_path, "py_path": None} for nb_path in notebook_paths
+        }
+
+        # Overwrites standard tasks.
+        if use_cached_py_files:
+            tasks = __get_tasks_for_cached_py_files()
+            # HACK: This is to deal with debuggin artefacts. Sometimes the .py file isn't removed.
+            tasks = {
+                key: value
+                for key, value in tasks.items()
+                if not value["nb_path"].endswith(".py")
+            }
+
         parallelize_tasks(
-            tasks=notebook_paths,
+            tasks=tasks.items(),
             on_task_received=__parallel_link_exceptions_to_ml_libraries,
             thread_count=thread_count,
             return_results=False,
@@ -67,15 +90,44 @@ def __setup_output_files(thread_count: int, tmp_data_dir: Path, real_output_path
         real_output_file.truncate()
 
 
+def __get_tasks_for_cached_py_files():
+    base_dir = config.path_default.joinpath("nb_to_py_mappings")
+    py_dirs = [
+        config.path_drive.joinpath("Kaggle").joinpath("nbdata_k_error"),
+        config.path_drive.joinpath("GitHub").joinpath("nbdata_error_g"),
+    ]
+    nb_dirs = [
+        config.path_drive.joinpath("Kaggle").joinpath("k_error_pys"),
+        config.path_drive.joinpath("GitHub").joinpath("g_error_pys"),
+    ]
+    mapping: SafeDict = many_quick_create_notebook_to_python_mapping(
+        py_dirs, nb_dirs, base_dir
+    )
+    return mapping
+
+
 def __parallel_link_exceptions_to_ml_libraries(
     task: Path, tmp_data_dir: Path, worker_id: int, task_id: int, *args, **kwargs
 ) -> None:
+    task_name, task = task
+
     if task_id % 100 == 0:
-        print(f"Starting task {task_id}: '{task}'")
+        print(f"Starting task {task_id}: '{task_name}' ({task})")
 
-    nb_path = task
+    nb_path = Path(task["nb_path"])
+    py_path = Path(task["py_path"])
 
-    ml_links = link_exceptions_to_ml_libraries(nb_path)
+    used_cached_file = os.path.exists(py_path)
+    if not used_cached_file:
+        py_path = None
+
+    try:
+        ml_links = link_exceptions_to_ml_libraries(nb_path, py_path)
+    except:
+        tb = traceback.format_exc()
+        print(f'{task=}\n{tb}')
+        return
+        
     ml_links = [
         (
             {
@@ -85,7 +137,12 @@ def __parallel_link_exceptions_to_ml_libraries(
         )
         for exception_id, link in ml_links
     ]
-    json_entry = {"notebook": str(nb_path), "exc_to_lib_links": ml_links}
+    json_entry = {
+        "notebook": str(nb_path),
+        "python_code": str(py_path),
+        "used_cached_file": used_cached_file,
+        "exc_to_lib_links": ml_links,
+    }
     j_data = json.dumps(json_entry)
 
     output_path = tmp_data_dir.joinpath(str(worker_id))
@@ -186,5 +243,5 @@ if __name__ == "__main__":
 
     count_only = False
     output_path = parallel_link_exceptions_to_ml_libraries(
-        files, thread_count=8, count_only=count_only
+        files, thread_count=9, count_only=count_only, use_cached_py_files=True
     )

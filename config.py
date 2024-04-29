@@ -4,7 +4,11 @@ path_drive_kaggle = r"D:\Data_NBs\Kaggle"
 
 yirans_path_default = r"C:\Users\yirwa29\Downloads\Dataset-Nb"
 willems_path_default = "/workspaces/jupyter_nbs_empirical/data"
-path_default = Path(yirans_path_default)
+path_default = Path(willems_path_default)
+
+willems_path_drive = path_default.joinpath("harddrive")
+path_drive = willems_path_drive
+
 
 print(f"{path_default=}")
 
