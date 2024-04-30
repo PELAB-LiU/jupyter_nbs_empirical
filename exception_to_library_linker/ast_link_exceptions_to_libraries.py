@@ -143,6 +143,8 @@ def __get_package_imports(py_ast: ast.Module) -> Iterator[PackageImport]:
         for imp in imports
     )
     imports = flatten(imports)
+    imports = list(imports)
+
     yield from imports
 
 
@@ -150,7 +152,7 @@ def __get_component_imports(py_ast: ast.Module) -> Iterator[ComponentImport]:
     # Loads all the import froms.
     importfroms = (imp for imp in py_ast.body if isinstance(imp, ast.ImportFrom))
     # HACK: idk why, but this solves multithreading issues.
-    q = list(importfroms)
+    importfroms = list(importfroms)
     importfroms = (
         (
             ComponentImport(
@@ -180,6 +182,7 @@ def __get_component_imports(py_ast: ast.Module) -> Iterator[ComponentImport]:
         for imp in importfroms
     )
     importfroms = flatten(importfroms)
+    importfroms = list(importfroms)
 
     yield from importfroms
 
@@ -535,7 +538,7 @@ if __name__ == "__main__":
 
     # Having a static path helps with debugging a specific notebook.
     static_path = None
-    static_path = "data/harddrive/GitHub/nbdata_error_g/nbdata_g_error_100-199/00100-7-ch21-mongodb.ipynb"
+    static_path = "/workspaces/jupyter_nbs_empirical/data/harddrive/GitHub/nbdata_error_g/nbdata_g_error_200-312/00247-224-matplotlib-tutorial.ipynb"
     if not static_path:
         # Loads all notebooks.
         base_folder = "./data/notebooks/nbdata_err_kaggle/nbdata_err_kaggle/nbdata_k_error/nbdata_k_error/"

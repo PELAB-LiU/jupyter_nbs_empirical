@@ -35,6 +35,7 @@ class StacktraceEntry:
 
 @dataclass(frozen=True)
 class NotebookStacktraceEntry(StacktraceEntry):
+    # NOTE: Take some care when using this attribute. It is not entirely certain that the parser sets the real cell index or the execution index.
     cell_index: int
 
 
@@ -354,9 +355,10 @@ def __parse_call_stacktrace_segment(stacktrace: List[str]) -> StacktraceEntry:
     elif origin_type == "Input":
         concrete_stacktrace_entry_type = NotebookStacktraceEntry
         stack_entry_kwargs["cell_index"] = int(origin[2][1:-2])
-    elif cell_index := re.match(re.compile(r"<ipython-input-(\d)+-\w+>"), origin_type):
+    elif cell_index := re.match(re.compile(r"<ipython-input-(\d+)-\w+>"), origin_type):
         concrete_stacktrace_entry_type = NotebookStacktraceEntry
-        stack_entry_kwargs["cell_index"] = cell_index.group(0)
+        stack_entry_kwargs["cell_index"] = None
+        # TODO: The cell index indicates the execution order. This could be stored somewhere.
     elif origin_type.startswith("/tmp/") or origin_type.startswith("/var/"):
         concrete_stacktrace_entry_type = NotebookStacktraceEntry
         stack_entry_kwargs["cell_index"] = None
@@ -413,7 +415,7 @@ def __parse_call_stacktrace_segment(stacktrace: List[str]) -> StacktraceEntry:
         concrete_stacktrace_entry_type = InternalMethodTraceEntry
         # TODO: There is probably a neater way to do this, but this information is not relevant for now.
         stack_entry_kwargs["internal_method_name"] = (
-            f"{internal_method.group(0)}, {internal_method.group(1)}"
+            f"{internal_method.group(1)}, {internal_method.group(2)}"
         )
     elif origin_type == "_RemoteTraceback:":
         # TODO: I am uncertain how unique this is.
