@@ -211,6 +211,9 @@ def __find_library_in_exception(
     # used_libraries = used_libraries.union(pack.library.lower() for pack in pack_imports)
 
     root_cause = get_root_exception(exc)
+    if root_cause is None:
+        return
+
     cause_iterator = get_cause_iterator(exc)
 
     for cause in cause_iterator:
@@ -538,7 +541,7 @@ if __name__ == "__main__":
 
     # Having a static path helps with debugging a specific notebook.
     static_path = None
-    static_path = "/workspaces/jupyter_nbs_empirical/data/harddrive/GitHub/nbdata_error_g/nbdata_g_error_200-312/00247-224-matplotlib-tutorial.ipynb"
+    static_path = "/workspaces/jupyter_nbs_empirical/data/harddrive/GitHub/nbdata_error_g/nbdata_g_error_100-199/00199-715-convnet-experiments-checkpoint.ipynb"
     if not static_path:
         # Loads all notebooks.
         base_folder = "./data/notebooks/nbdata_err_kaggle/nbdata_err_kaggle/nbdata_k_error/nbdata_k_error/"

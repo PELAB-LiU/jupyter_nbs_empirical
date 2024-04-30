@@ -108,6 +108,10 @@ def get_raw_notebook_exceptions_from(
             continue
 
         for output in cell["outputs"]:
+            if "stderr" in output:
+                # TODO: in some cases exceptions are stored in a `stderr` field. This could be supported/stored.
+                print(f"Found stderr entry in notebook '{notebook_path}'.")
+
             if "traceback" not in output:
                 continue
 
@@ -145,6 +149,9 @@ def get_root_exception(
     notebook_exception: NotebookException,
 ) -> StacktraceEntry | None:
     """Returns the root cause of the notebook's exception."""
+
+    if len(notebook_exception.inner_errors) == 0:
+        return
 
     inner_error_root = notebook_exception.inner_errors[-1]
 
@@ -484,7 +491,7 @@ if __name__ == "__main__":
 
     # Having a static path helps with debugging a specific notebook.
     static_path = None
-    # static_path = "./data/notebooks/nbdata_err_kaggle/nbdata_err_kaggle/nbdata_k_error/nbdata_k_error/230102/adeelsoomro00_introduction-to-python.ipynb"
+    static_path = "/workspaces/jupyter_nbs_empirical/data/harddrive/GitHub/nbdata_error_g/nbdata_g_error_100-199/00199-715-convnet-experiments-checkpoint.ipynb"
     if not static_path:
         # Loads all notebooks.
         files = list(
