@@ -21,6 +21,7 @@ from exception_to_library_linker.notebook_exception import (
     RawNotebookException,
     NotebookException,
     FileStacktraceEntry,
+    ExceptionStacktrace,
 )
 from exception_to_library_linker.objects import (
     PackageImport,
@@ -106,6 +107,13 @@ def __link_exceptions_to_libraries(
             exc, component_imports, package_imports
         )
         used_libraries = set(used_libraries)
+
+        # # TODO: This is access magic. move it somewhere else.
+        # inner_error_root = exc.inner_errors[-1]
+        # new_libs = __find_library_in_raw_exc_message(
+        #     inner_error_root, component_imports, package_imports
+        # )
+        # used_libraries = used_libraries.union(new_libs)
 
         # Finds dependencies related to the statement itself.
         # TODO: We could probably filter this list, removing Python standard library functions / constants etc.
@@ -238,6 +246,24 @@ def __find_library_in_exception(
                     yield pack
 
 
+# def __find_library_in_raw_exc_message(
+#     root_cause: ExceptionStacktrace,
+#     comp_imports: List[ComponentImport],
+#     pack_imports: List[PackageImport],
+# ) -> Iterator[ComponentImport | PackageImport]:
+
+#     # HACK: This only works when you use methods that they both have, like `get_used_alias`.
+#     imports: List[ComponentImport | PackageImport] = [
+#         *comp_imports,
+#         *pack_imports,
+#     ]
+
+#     for imp in imports:
+#         lib_name = imp.library
+#         if lib_name in root_cause.exception_message:
+#             yield imp
+
+
 def __get_exc_statement_variables(
     raw_exc: RawNotebookException,
     exc: NotebookException,
@@ -270,9 +296,10 @@ def __get_py_line_number(
     # TODO: Refactor this to not require 3 objects.
 
     cell_index = root_cause.cell_index
-    if root_cause.cell_index is None:
-        # TODO: It would be better if this result is stored somewhere for reuse.
-        cell_index = __find_my_cell_index(root_cause, nb_mapper)
+    # TODO: We can't use the root cause's `cell_index`. Very commonly, this refers to the execution index in the exception traces. Using `__find_my_cell_index` is not a great alternative, as it's slow...
+    # if root_cause.cell_index is None:
+    #     # TODO: It would be better if this result is stored somewhere for reuse.
+    cell_index = __find_my_cell_index(root_cause, nb_mapper)
 
     if cell_index is None or not isinstance(cell_index, int):
         return None
@@ -541,7 +568,7 @@ if __name__ == "__main__":
 
     # Having a static path helps with debugging a specific notebook.
     static_path = None
-    static_path = "/workspaces/jupyter_nbs_empirical/data/harddrive/GitHub/nbdata_error_g/nbdata_g_error_100-199/00199-715-convnet-experiments-checkpoint.ipynb"
+    static_path = "/workspaces/jupyter_nbs_empirical/data/harddrive/GitHub/00000-99/00000/00000-1103-ls-ds-213-assignment.ipynb"
     if not static_path:
         # Loads all notebooks.
         base_folder = "./data/notebooks/nbdata_err_kaggle/nbdata_err_kaggle/nbdata_k_error/nbdata_k_error/"
