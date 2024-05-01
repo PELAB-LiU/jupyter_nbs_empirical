@@ -460,10 +460,10 @@ def select_builtin_exps(df_err_lib_filtered, source):
     print("\nIn total, {0} exception types are selected for further analysis".format(n_selected_exps))
     
     
-def reload_module(module):
+def reload_module(tar_module):
     import importlib
-    importlib.reload(module)
-    import module
+    importlib.reload(tar_module)
+#     import tar_module
 
 def get_python_exception_names():
     list_of_exception_names = [

@@ -15,23 +15,38 @@ import nltk
 import string
 from kneed import KneeLocator
 import math
+import editdistance
+from typing import Sequence, Iterable, Hashable, List, Optional, Union
+T = Iterable[Hashable]
 
 def preprocess_text(text):
-    # remove url
-    pattern = r"(http|ftp|https)://([\w_-]+(?:(?:\.[\w_-]+)+))([\w.,@?^=%&:/~+#-]*[\w@?^=%&/~+#-])?"
-    cleaned_text = re.sub(pattern, "", str(text))
-    # remove punctuation and words containing numbers
+#     # remove url
+#     pattern = r"(http|ftp|https)://([\w_-]+(?:(?:\.[\w_-]+)+))([\w.,@?^=%&:/~+#-]*[\w@?^=%&/~+#-])?"
+#     cleaned_text = re.sub(pattern, "", str(text))
+    cleaned_text = re.sub(r'\r\n|\r|\n|\\n', ' ', str(text))
+    # remove url/filepath..
+    cleaned_text = re.sub(r'\S+\.\S+', ' ', cleaned_text)
+    # remove words containing digits
+    cleaned_text = re.sub(r'([a-zA-Z_.|:;-]*\d+[a-zA-Z_.|:;-]*)+', ' ', cleaned_text)
+    # replace strange symbols to whitespace
+    cleaned_text = re.sub(r'[^A-Za-z0-9\s]', ' ', cleaned_text)
+    # just keep one space
+    cleaned_text = re.sub(r' +', r' ', cleaned_text)
+    
+    # tokenize
     tokens = nltk.word_tokenize(cleaned_text)
     res = []
     for token in tokens:
-        if (token not in string.punctuation) and bool(re.search(r'\d', token)) != True and ('_' not in token):
+        if (token not in string.punctuation) and bool(re.search(r'\d', token)) != True:
             res.append(re.sub('[^A-Za-z-]+', '', token).strip().lower())
     return " ".join(res)
 
 def preprocess_text_transformer(text):
-    # remove url
-    pattern = r"(http|ftp|https)://([\w_-]+(?:(?:\.[\w_-]+)+))([\w.,@?^=%&:/~+#-]*[\w@?^=%&/~+#-])?"
-    cleaned_text = re.sub(pattern, "", str(text))
+    cleaned_text = re.sub(r'\r\n|\r|\n|\\n', ' ', str(text))
+    # remove url/filepath..
+    cleaned_text = re.sub(r'\S+\.\S+', ' ', cleaned_text)
+    # just keep one space
+    cleaned_text = re.sub(r' +', r' ', cleaned_text)
     return cleaned_text.strip().lower()
 
 def scaling(X_array):
@@ -59,13 +74,12 @@ def load_glove(path_glove_txt):
 
 # turn A sentence to vector via word embeddings by
 # taking the mean/sum of all word embeddings of the sentence
-def vectorizer_word2vec(sentence, glove_vectors, embedding_dim, aggregation='mean'):
+def vectorizer_word2vec(sentence, w2v_vectors, embedding_dim, aggregation='mean'):
     vec = np.zeros(embedding_dim).reshape((1, embedding_dim))
     count = 0
     for word in sentence.split():
-        embedding_vector = glove_vectors.get(word)
-        if embedding_vector is not None:
-            vec += glove_vectors[word].reshape((1, embedding_dim)) # update vector with new word
+        if word in w2v_vectors:
+            vec += w2v_vectors[word].reshape((1, embedding_dim)) # update vector with new word
             count += 1 # counts every word in sentence
     if aggregation == 'mean':
         if count != 0:
@@ -128,6 +142,73 @@ def cluster_dbscan(X_array, eps=0.2, min_samples=400):
     print('Estimated no. of noise points: %d' % no_noise)
     return cluster_labels
 
+# reduce the dimensionality of the data using PCA 
+def pca(vectorized_arr, n_component = 2):
+    pca = PCA(n_components=n_component) 
+    reduced_data = pca.fit_transform(vectorized_arr)
+    return reduced_data
+
+## ===================evaluate based on levenshtein similarity===================
+
+def levenshtein_similarity(a: Sequence[T], b: Sequence[T]) -> float:
+    return 1 - editdistance.eval(a, b) / max(len(a), len(b))
+
+def levenshtein_similarity_1_to_n(many: Sequence[Sequence[T]], single: Optional[Sequence[T]] = None) -> Union[List[float], float]:
+    if len(many) == 0:
+        return 1.
+    if single is None:
+        single, many = many[0], many[1:]
+    if len(many) == 0:
+        return [1.0]
+    return [levenshtein_similarity(single, item) for item in many]
+
+def cluster_statistics_lev(cluster_name, cluster_size, messages):
+    similarity = levenshtein_similarity_1_to_n(messages)
+    return {'cluster_name': cluster_name,
+            'cluster_size': cluster_size,
+            'mean_similarity': np.mean(similarity),
+            'std_similarity': np.std(similarity)}
+
+def statistics_lev(df, res_col_name, value_col_name="evalue",):
+    patterns = []
+    n_groups = df[res_col_name].nunique()-1
+    for i in range(n_groups):
+        messages = df[df[res_col_name]==i][value_col_name]
+        patterns.append(cluster_statistics_lev(i, len(messages), messages.tolist()))
+    res = pd.DataFrame(patterns, columns=['cluster_name', 'cluster_size', 'mean_similarity', 'std_similarity'])\
+                .round(2)\
+                .sort_values(by='cluster_size', ascending=False)
+    res_ws = np.sum(res.mean_similarity*res.cluster_size)/sum(res.cluster_size)
+    res_ws_std = np.sum(res.std_similarity*res.cluster_size)/sum(res.cluster_size)
+    res_n_noise = sum(df[res_col_name]==-1)
+#     print("weighted similarity:", np.sum(res.mean_similarity*res.cluster_size)/sum(res.cluster_size))
+#     print("weighted similarity std:", np.sum(res.std_similarity*res.cluster_size)/sum(res.cluster_size))
+    return res, [res_ws, res_ws_std, res_n_noise/len(df)]
+
+## ===================evaluate based on silhouette score===================
+
+def eval_cluster_silhouette(X_array, y_predicted):
+    return silhouette_score(X_array, y_predicted)
+
+## ===================evaluate based on ground truth===================
+
+# evaluate clustering quality with knowing the true labels
+def eval_cluster_groundtruth(Y_true, X_array):
+    y_pred = kmeans.fit_predict(X_array)
+    
+    # Evaluate the performance using ARI, NMI, and FMI
+    ari = adjusted_rand_score(Y_true, y_pred)
+    nmi = normalized_mutual_info_score(Y_true, y_pred)
+    fmi = fowlkes_mallows_score(Y_true, y_pred)
+
+    # Print Metrics scores
+    print("Adjusted Rand Index (ARI): {:.3f}".format(ari))
+    print("Normalized Mutual Information (NMI): {:.3f}".format(nmi))
+    print("Fowlkes-Mallows Index (FMI): {:.3f}".format(fmi))
+
+    
+    
+    
 def print_clusters(num_clusters, res_clusters, n_sample=10):
     for i in range(num_clusters):
         res_cluster = res_clusters[res_clusters['cluster']==i]
@@ -143,29 +224,6 @@ def print_clusters_general(cluster_values, cluster_labels, cluster_ids, n_sample
         print('Printing {} samples of cluster {}'.format(n_sample, i))
         print(res_cluster.sample(n_sample))
         print('\n')
-        
-def eval_cluster_silhouette(X_array, y_predicted):
-    return silhouette_score(X_array, y_predicted)
-        
-# evaluate clustering quality with knowing the true labels
-def eval_cluster_groundtruth(Y_true, X_array):
-    y_pred = kmeans.fit_predict(X_array)
-    
-    # Evaluate the performance using ARI, NMI, and FMI
-    ari = adjusted_rand_score(Y_true, y_pred)
-    nmi = normalized_mutual_info_score(Y_true, y_pred)
-    fmi = fowlkes_mallows_score(Y_true, y_pred)
-
-    # Print Metrics scores
-    print("Adjusted Rand Index (ARI): {:.3f}".format(ari))
-    print("Normalized Mutual Information (NMI): {:.3f}".format(nmi))
-    print("Fowlkes-Mallows Index (FMI): {:.3f}".format(fmi))
-
-# reduce the dimensionality of the data using PCA 
-def pca(vectorized_arr, n_component = 2):
-    pca = PCA(n_components=n_component) 
-    reduced_data = pca.fit_transform(vectorized_arr)
-    return reduced_data
     
 def plot_clusters(vectorized_texts, n_clusters, cluster_labels):
     reduced_data = pca(vectorized_texts.toarray())

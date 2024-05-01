@@ -16,6 +16,8 @@ path_kaggle_error_process = path_default.joinpath("nbdata_k_error")
 path_kaggle_error_analysis = path_kaggle_error_process.joinpath("analysis_kerr")
 path_kaggle_error_ast = path_default.joinpath("nbdata_k_error_ast")
 
+path_w2v_models = path_default.joinpath("w2v_models")
+
 top_lib_names = [
     "pandas",
     "numpy",
