@@ -125,9 +125,9 @@ def __parallel_link_exceptions_to_ml_libraries(
         ml_links = link_exceptions_to_ml_libraries(nb_path, py_path)
     except:
         tb = traceback.format_exc()
-        print(f'{task=}\n{tb}')
+        print(f"{task=}\n{tb}")
         return
-        
+
     ml_links = [
         (
             {
@@ -228,8 +228,7 @@ def count_output(output_path: Path):
         f"Exceptions with ML links {tot_exc_with_links}/{total_exc} ({__safe_cal_perc(tot_exc_with_links, total_exc):.2f}%)"
     )
 
-
-if __name__ == "__main__":
+def main():
     from wmutils.file import iterate_through_files_in_nested_folders
 
     files = (
@@ -245,3 +244,8 @@ if __name__ == "__main__":
     output_path = parallel_link_exceptions_to_ml_libraries(
         files, thread_count=9, count_only=count_only, use_cached_py_files=True
     )
+
+
+if __name__ == "__main__":
+    main()
+    

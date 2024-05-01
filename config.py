@@ -2,12 +2,14 @@ from pathlib import Path
 
 path_drive_kaggle = r"D:\Data_NBs\Kaggle"
 
-yirans_path_default = r"C:\Users\yirwa29\Downloads\Dataset-Nb"
-willems_path_default = "/workspaces/jupyter_nbs_empirical/data"
-path_default = Path(willems_path_default)
+yirans_path_default = Path(r"C:\Users\yirwa29\Downloads\Dataset-Nb")
+willems_path_default = Path(".").absolute().joinpath("data")
+
+path_default = willems_path_default
 
 willems_path_drive = path_default.joinpath("harddrive")
-path_drive = willems_path_drive
+willems_path_drive_2 = Path(r"D:\Data_NBs")
+path_drive = willems_path_drive_2
 
 
 print(f"{path_default=}")
