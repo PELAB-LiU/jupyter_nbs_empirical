@@ -42,21 +42,23 @@ def parallel_link_exceptions_to_ml_libraries(
 
         # Sets standard tasks.
         tasks = {
-            nb_path: {"nb_path": nb_path, "py_path": None} for nb_path in notebook_paths
+            nb_path: {"nb_path": str(nb_path), "py_path": None} for nb_path in notebook_paths
         }
 
         # Overwrites standard tasks.
         if use_cached_py_files:
-            tasks = __get_tasks_for_cached_py_files()
+            tasks = __get_tasks_for_cached_py_files()   
             # HACK: This is to deal with debuggin artefacts. Sometimes the .py file isn't removed.
             tasks = {
                 key: value
                 for key, value in tasks.items()
-                if not value["nb_path"].endswith(".py")
+                if value["nb_path"].endswith(".ipynb")
             }
 
+        tasks = list(tasks.items())
+        
         parallelize_tasks(
-            tasks=tasks.items(),
+            tasks=tasks,
             on_task_received=__parallel_link_exceptions_to_ml_libraries,
             thread_count=thread_count,
             return_results=False,
@@ -115,11 +117,13 @@ def __parallel_link_exceptions_to_ml_libraries(
         print(f"Starting task {task_id}: '{task_name}' ({task})")
 
     nb_path = Path(task["nb_path"])
-    py_path = Path(task["py_path"])
+    py_path = task["py_path"]
 
-    used_cached_file = os.path.exists(py_path)
+    used_cached_file = not py_path is None and os.path.exists(py_path)
     if not used_cached_file:
         py_path = None
+    else:
+        py_path = Path(py_path)
 
     try:
         ml_links = link_exceptions_to_ml_libraries(nb_path, py_path)
@@ -228,16 +232,51 @@ def count_output(output_path: Path):
         f"Exceptions with ML links {tot_exc_with_links}/{total_exc} ({__safe_cal_perc(tot_exc_with_links, total_exc):.2f}%)"
     )
 
+
+# TODO: move these to `wmutils`
+def get_subfolders(parent_dir: Path) -> Iterator[Path]:
+    """Returns the folders in a directory."""
+    return [
+        parent_dir.joinpath(name)
+        for name in os.listdir(parent_dir)
+        if os.path.isdir(parent_dir.joinpath(name))
+    ]
+
+
+def iterate_through_nested_folders(base_folder: Path, max_depth: int) -> Iterator[Path]:
+    """Iterates through all folders with a certain depth from the specified base folder."""
+    yield base_folder
+    sub_folders = get_subfolders(base_folder)
+    if max_depth > 0:
+        for subfolder in sub_folders:
+            for folder in iterate_through_nested_folders(subfolder, max_depth - 1):
+                yield folder
+    else:
+        for folder in get_subfolders(base_folder):
+            yield folder
+
+
+def iterate_through_files_in_nested_folders(
+    base_folder: Path, max_depth: int
+) -> Iterator[Path]:
+    """Iterates through all of the files that are in the folders with a
+    certain depth from the specified base folder."""
+    for folder in iterate_through_nested_folders(base_folder, max_depth):
+        for file in os.listdir(folder):
+            file_path = folder.joinpath(file)
+            yield file_path
+
+
 def main():
-    from wmutils.file import iterate_through_files_in_nested_folders
+    # from wmutils.file import iterate_through_files_in_nested_folders
 
     files = (
-        Path(file)
+        file
         for file in iterate_through_files_in_nested_folders(
-            "./data/notebooks/nbdata_err_kaggle/nbdata_err_kaggle/nbdata_k_error/nbdata_k_error/",
+            Path("./data/notebooks/nbdata_err_kaggle/nbdata_err_kaggle/nbdata_k_error/nbdata_k_error/"),
             10_000,
         )
-        if file.endswith(".ipynb") and os.path.isfile(file)
+        if 'ipynb' in file.suffix and os.path.isfile(file)
     )
 
     count_only = False
@@ -248,4 +287,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-    

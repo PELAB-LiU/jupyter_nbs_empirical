@@ -9,7 +9,7 @@ path_default = willems_path_default
 
 willems_path_drive = path_default.joinpath("harddrive")
 willems_path_drive_2 = Path(r"D:\Data_NBs")
-path_drive = willems_path_drive_2
+path_drive = willems_path_drive
 
 
 print(f"{path_default=}")

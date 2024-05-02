@@ -92,15 +92,44 @@ def create_notebook_to_python_mapping(
     # Builds mapping.
     mapping = {}
     for nb_name, nb_path in nb_paths.items():
-        if nb_name in py_paths:
-            py_path = py_paths[nb_name]
-            entry = {"nb_path": str(nb_path), "py_path": str(py_path)}
-            mapping[str(nb_name)] = entry
+        entry = {
+            "nb_path": str(nb_path), 
+            "py_path": str(py_paths[nb_name]) if nb_name in py_paths else None
+        }
+        mapping[str(nb_name)] = entry
 
     print(f"Loaded {len(mapping)} mappings from {len(nb_paths)} NBs and {len(py_paths)} Python files.")
 
     return mapping
 
+
+def replace_prefix(data_path: Path, old: Path, new: Path):
+    # NOTE: There is no reason for anyone to ever use this.
+    with open(data_path, 'r', encoding='utf-8') as data_file:
+        j_data = json.loads(data_file.read())
+    
+    def __posixify(path: Path):
+        parts = str(path).split("\\")
+        return str(Path(*parts))
+
+    old = __posixify(old)
+    new = str(new)
+
+    def __replace(path: str | None) -> str | None:
+        if path is None:
+            return None
+        path = __posixify(path)
+        path = path[len(old):]
+        path= f'{new}/{path}'
+        path = Path(path).absolute()
+        return str(path)
+
+    j_data = {key: {'nb_path': __replace(value['nb_path']), "py_path": __replace(value['py_path'])} for key, value in j_data.items()}
+
+    with open(data_path.with_suffix(".json.tmp"), 'w+', encoding='utf-8') as data_file:
+        data_file.write(json.dumps(j_data))
+    
+    
 
 if __name__ == "__main__":
     base_folder = Path("/workspaces/jupyter_nbs_empirical/data/nb_to_py_mappings")
@@ -118,3 +147,7 @@ if __name__ == "__main__":
     mapping = many_quick_create_notebook_to_python_mapping(
         nb_paths, py_paths, base_folder
     )
+
+    # import config
+    # replace_prefix(Path('data/nb_to_py_mappings/nb_to_py_map_00a30b636bd0a88aa5debc7792defbd9.json'), config.willems_path_drive_2, config.willems_path_drive)
+    # replace_prefix(Path('data/nb_to_py_mappings/nb_to_py_map_0367b1e6b4459d5197dd5e7f586b072c.json'), config.willems_path_drive_2, config.willems_path_drive)
