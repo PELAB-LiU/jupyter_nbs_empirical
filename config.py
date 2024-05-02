@@ -5,7 +5,7 @@ path_drive_kaggle = r"D:\Data_NBs\Kaggle"
 yirans_path_default = Path(r"C:\Users\yirwa29\Downloads\Dataset-Nb")
 willems_path_default = Path(".").absolute().joinpath("data")
 
-path_default = willems_path_default
+path_default = yirans_path_default
 
 willems_path_drive = path_default.joinpath("harddrive")
 willems_path_drive_2 = Path(r"D:\Data_NBs")
