@@ -42,11 +42,6 @@ def parse_traceback(str_traceback):
     ansi_escape = re.compile(r'\\x1b\[[0-9;]*m') #re.compile(r'(?:\x1B[@-_]|[\x80-\x9F])[0-?]*[ -/]*[@-~]')
     return ansi_escape.sub('', str_traceback)
 
-def parse_traceback_2(str_traceback):
-    ansi_escape = re.compile(r'\x1B(?:[@-Z\\-_]|\[[0-?]*[ -/]*[@-~])')
-    result = ansi_escape.sub('', str_traceback)
-    return result
-
 def list_traceback(txt_traceback):
     try:
         tb_list = ast.literal_eval(txt_traceback)
