@@ -16,6 +16,7 @@ import string
 from kneed import KneeLocator
 import math
 import editdistance
+import hashlib
 from typing import Sequence, Iterable, Hashable, List, Optional, Union
 T = Iterable[Hashable]
 
@@ -74,12 +75,17 @@ def load_glove(path_glove_txt):
 
 # turn A sentence to vector via word embeddings by
 # taking the mean/sum of all word embeddings of the sentence
-def vectorizer_word2vec(sentence, w2v_vectors, embedding_dim, aggregation='mean'):
+def vectorizer_word2vec(sentence, w2v_vectors, embedding_dim, aggregation='mean', is_subword=False):
     vec = np.zeros(embedding_dim).reshape((1, embedding_dim))
     count = 0
-    for word in sentence.split():
-        if word in w2v_vectors:
-            vec += w2v_vectors[word].reshape((1, embedding_dim)) # update vector with new word
+    if is_subword==False:
+        for word in sentence.split():
+            if word in w2v_vectors:
+                vec += w2v_vectors[word].reshape((1, embedding_dim)) # update vector with new word
+                count += 1 # counts every word in sentence
+    else:
+        for word in sentence.split():
+            vec += w2v_vectors[word].reshape((1, embedding_dim)) # update vector, sub word doesn't check key existence
             count += 1 # counts every word in sentence
     if aggregation == 'mean':
         if count != 0:
@@ -206,8 +212,17 @@ def eval_cluster_groundtruth(Y_true, X_array):
     print("Normalized Mutual Information (NMI): {:.3f}".format(nmi))
     print("Fowlkes-Mallows Index (FMI): {:.3f}".format(fmi))
 
-    
-    
+## ===================other similarity===================
+
+def jaccard_similarity(list1, list2):
+    s1 = set(list1.split(" "))
+    s2 = set(list2.split(" "))
+    return float(len(s1.intersection(s2)) / len(s1.union(s2)))
+
+def generateHash(target_str):
+    return hashlib.md5(repr(target_str).encode('utf-8')).hexdigest()
+
+
     
 def print_clusters(num_clusters, res_clusters, n_sample=10):
     for i in range(num_clusters):

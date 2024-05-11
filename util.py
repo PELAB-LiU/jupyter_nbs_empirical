@@ -19,6 +19,20 @@ try:
 except ImportError:
     pass
 
+def extract_libs_from_exp_mllib(row):
+    str_exp_mllib = row["exp_mllib"]
+    if (not str_exp_mllib) or pd.isna(str_exp_mllib):
+        return None
+    try:
+        tmp = eval(str_exp_mllib)
+        res = set()
+        for i in range(len(tmp)):
+            res.add(tmp[i]["library"])
+        return res
+    except:
+        print("cannot parse to list, eid:",row["eid"])
+        return None
+
 def get_exp_mllib(path_exp_libs, df_err):
     res = {eid:None for eid in df_err.eid}
     with open(path_exp_libs, "r", encoding="utf-8") as output_file:
@@ -473,6 +487,45 @@ def get_python_exception_names():
     list_of_exception_names = [ele for ele in list_of_exception_names if ele not in config.exclude_base_exceptions]
     exception_list = [ele.lower() for ele in list_of_exception_names]
     return exception_list
+
+def visulize_exps(df_err, title="#errors vs. exception types"):
+    #plot
+    df_err["ename_mapped"].groupby([df_err["ename_mapped"]]).count().sort_values(ascending=0).plot(kind="bar", figsize=(12,4),
+                                                                                                   x='ename', y='ecount',
+                                                                                                   title=title)
+    plt.show()
+
+def visulize_exps_mlnbs(df_mlerr):
+    dict_err_MLlib_counts = {}
+    dict_err_MLlib_percents = {}
+    for builtin_exp in df_mlerr.ename.value_counts().index:
+        df_err_builtin_exp = df_mlerr[df_mlerr["ename_mapped"]==builtin_exp]
+        #  data prepare
+        libs_count = len(df_err_builtin_exp[~df_err_builtin_exp["exp_mllib"].isnull()])
+        if libs_count <= 0:
+            continue
+        lib_percent = libs_count/len(df_err_builtin_exp)
+        dict_err_MLlib_counts[builtin_exp]=libs_count
+        dict_err_MLlib_percents[builtin_exp]=lib_percent
+    #plot
+    df_err_MLlib_counts = pd.DataFrame.from_dict(dict_err_MLlib_counts.items())
+    df_err_MLlib_counts.columns = ['ename', 'eMLlib_count']
+    df_err_MLlib_counts = df_err_MLlib_counts.sort_values("eMLlib_count", ascending=0).reset_index(drop=True)
+    df_err_MLlib_counts.plot(title="#MLlib-related errors vs. exception types", 
+                             x='ename', y='eMLlib_count',
+                             kind="bar", figsize=(12,4))
+    plt.show()
+    df_err_MLlib_percents = pd.DataFrame.from_dict(dict_err_MLlib_percents.items())
+    df_err_MLlib_percents.columns = ['ename', 'eMLlib_percent']
+    df_err_MLlib_percents = df_err_MLlib_percents.sort_values("eMLlib_percent", ascending=0).reset_index(drop=True)
+    df_err_MLlib_percents.plot(title="%MLlib-related errors vs. exception types", 
+                               x='ename', y='eMLlib_percent',
+                               kind="bar", figsize=(12,4))
+    plt.show()
+#     return
+#     return df_err_MLlib_counts, df_err_MLlib_percents
+
+########################decrepcated###############################
 
 def visulize_exps_MLlibs(df_err_lib_filtered):
     df_err_lib_filtered["lib_parsed_pop"] = df_err_lib_filtered['lib_parsed'].apply(lambda i: i if i in config.top_lib_names else None)
