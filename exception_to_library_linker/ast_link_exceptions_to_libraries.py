@@ -21,6 +21,7 @@ from exception_to_library_linker.notebook_exception import (
     RawNotebookException,
     NotebookException,
     FileStacktraceEntry,
+    ExceptionStacktrace,
 )
 from exception_to_library_linker.objects import (
     PackageImport,
@@ -48,11 +49,11 @@ def link_many_nb_exceptions_to_ml_libraries(
 
 
 def link_exceptions_to_ml_libraries(
-    notebook_path: Path,
+    notebook_path: Path, python_path: Path | None = None
 ) -> List[List[Tuple[UUID, PackageImport | ComponentImport]]]:
     try:
         with NotebookToPythonMapper(
-            notebook_path, delete_py_file_on_exit=DELETE_PY_FILE_ON_EXIT
+            notebook_path, python_path, delete_py_file_on_exit=DELETE_PY_FILE_ON_EXIT
         ) as nb_mapper:
             # Collects all libraries and removes everything that has no ML relevance.
             libraries_per_exception = __link_exceptions_to_libraries(nb_mapper)
@@ -65,6 +66,7 @@ def link_exceptions_to_ml_libraries(
             )
             return ml_libraries
     except SyntaxError:
+        print(f"Couldn't create AST in file {notebook_path=}, {python_path=}")
         return []
 
 
@@ -77,6 +79,7 @@ def __link_exceptions_to_libraries(
     try:
         py_ast = __build_python_ast(nb_mapper.mapping.python_path)
     except SyntaxError:
+        print(f"Couldn't create AST in file {nb_mapper.mapping.notebook_path=}")
         return
 
     # Loads imports from AST.
@@ -104,6 +107,13 @@ def __link_exceptions_to_libraries(
             exc, component_imports, package_imports
         )
         used_libraries = set(used_libraries)
+
+        # # TODO: This is access magic. move it somewhere else.
+        # inner_error_root = exc.inner_errors[-1]
+        # new_libs = __find_library_in_raw_exc_message(
+        #     inner_error_root, component_imports, package_imports
+        # )
+        # used_libraries = used_libraries.union(new_libs)
 
         # Finds dependencies related to the statement itself.
         # TODO: We could probably filter this list, removing Python standard library functions / constants etc.
@@ -141,12 +151,16 @@ def __get_package_imports(py_ast: ast.Module) -> Iterator[PackageImport]:
         for imp in imports
     )
     imports = flatten(imports)
+    imports = list(imports)
+
     yield from imports
 
 
 def __get_component_imports(py_ast: ast.Module) -> Iterator[ComponentImport]:
     # Loads all the import froms.
     importfroms = (imp for imp in py_ast.body if isinstance(imp, ast.ImportFrom))
+    # HACK: idk why, but this solves multithreading issues.
+    importfroms = list(importfroms)
     importfroms = (
         (
             ComponentImport(
@@ -176,6 +190,7 @@ def __get_component_imports(py_ast: ast.Module) -> Iterator[ComponentImport]:
         for imp in importfroms
     )
     importfroms = flatten(importfroms)
+    importfroms = list(importfroms)
 
     yield from importfroms
 
@@ -204,6 +219,9 @@ def __find_library_in_exception(
     # used_libraries = used_libraries.union(pack.library.lower() for pack in pack_imports)
 
     root_cause = get_root_exception(exc)
+    if root_cause is None:
+        return
+
     cause_iterator = get_cause_iterator(exc)
 
     for cause in cause_iterator:
@@ -226,6 +244,24 @@ def __find_library_in_exception(
             for pack in pack_imports:
                 if pack.library.lower() in part:
                     yield pack
+
+
+# def __find_library_in_raw_exc_message(
+#     root_cause: ExceptionStacktrace,
+#     comp_imports: List[ComponentImport],
+#     pack_imports: List[PackageImport],
+# ) -> Iterator[ComponentImport | PackageImport]:
+
+#     # HACK: This only works when you use methods that they both have, like `get_used_alias`.
+#     imports: List[ComponentImport | PackageImport] = [
+#         *comp_imports,
+#         *pack_imports,
+#     ]
+
+#     for imp in imports:
+#         lib_name = imp.library
+#         if lib_name in root_cause.exception_message:
+#             yield imp
 
 
 def __get_exc_statement_variables(
@@ -260,9 +296,10 @@ def __get_py_line_number(
     # TODO: Refactor this to not require 3 objects.
 
     cell_index = root_cause.cell_index
-    if root_cause.cell_index is None:
-        # TODO: It would be better if this result is stored somewhere for reuse.
-        cell_index = __find_my_cell_index(root_cause, nb_mapper)
+    # TODO: We can't use the root cause's `cell_index`. Very commonly, this refers to the execution index in the exception traces. Using `__find_my_cell_index` is not a great alternative, as it's slow...
+    # if root_cause.cell_index is None:
+    #     # TODO: It would be better if this result is stored somewhere for reuse.
+    cell_index = __find_my_cell_index(root_cause, nb_mapper)
 
     if cell_index is None or not isinstance(cell_index, int):
         return None
@@ -273,6 +310,9 @@ def __get_py_line_number(
         )
         return py_line_number
     except:
+        print(
+            f"Couldn't find python line number {nb_mapper.mapping.notebook_path=}, {cell_index=}, {root_cause.exception_line_number=}"
+        )
         return None
 
 
@@ -528,7 +568,7 @@ if __name__ == "__main__":
 
     # Having a static path helps with debugging a specific notebook.
     static_path = None
-    static_path = "data/notebooks/nbdata_err_kaggle/nbdata_err_kaggle/nbdata_k_error/nbdata_k_error/230102/abdallahwagih_plant-stress-identification-acc-98-2.ipynb"
+    static_path = "/workspaces/jupyter_nbs_empirical/data/harddrive/GitHub/00000-99/00000/00000-1103-ls-ds-213-assignment.ipynb"
     if not static_path:
         # Loads all notebooks.
         base_folder = "./data/notebooks/nbdata_err_kaggle/nbdata_err_kaggle/nbdata_k_error/nbdata_k_error/"

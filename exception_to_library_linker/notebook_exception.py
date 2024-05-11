@@ -35,6 +35,7 @@ class StacktraceEntry:
 
 @dataclass(frozen=True)
 class NotebookStacktraceEntry(StacktraceEntry):
+    # NOTE: Take some care when using this attribute. It is not entirely certain that the parser sets the real cell index or the execution index.
     cell_index: int
 
 
@@ -107,6 +108,10 @@ def get_raw_notebook_exceptions_from(
             continue
 
         for output in cell["outputs"]:
+            if "stderr" in output:
+                # TODO: in some cases exceptions are stored in a `stderr` field. This could be supported/stored.
+                print(f"Found stderr entry in notebook '{notebook_path}'.")
+
             if "traceback" not in output:
                 continue
 
@@ -144,6 +149,9 @@ def get_root_exception(
     notebook_exception: NotebookException,
 ) -> StacktraceEntry | None:
     """Returns the root cause of the notebook's exception."""
+
+    if len(notebook_exception.inner_errors) == 0:
+        return
 
     inner_error_root = notebook_exception.inner_errors[-1]
 
@@ -354,9 +362,10 @@ def __parse_call_stacktrace_segment(stacktrace: List[str]) -> StacktraceEntry:
     elif origin_type == "Input":
         concrete_stacktrace_entry_type = NotebookStacktraceEntry
         stack_entry_kwargs["cell_index"] = int(origin[2][1:-2])
-    elif cell_index := re.match(re.compile(r"<ipython-input-(\d)+-\w+>"), origin_type):
+    elif cell_index := re.match(re.compile(r"<ipython-input-(\d+)-\w+>"), origin_type):
         concrete_stacktrace_entry_type = NotebookStacktraceEntry
-        stack_entry_kwargs["cell_index"] = cell_index.group(0)
+        stack_entry_kwargs["cell_index"] = None
+        # TODO: The cell index indicates the execution order. This could be stored somewhere.
     elif origin_type.startswith("/tmp/") or origin_type.startswith("/var/"):
         concrete_stacktrace_entry_type = NotebookStacktraceEntry
         stack_entry_kwargs["cell_index"] = None
@@ -413,7 +422,7 @@ def __parse_call_stacktrace_segment(stacktrace: List[str]) -> StacktraceEntry:
         concrete_stacktrace_entry_type = InternalMethodTraceEntry
         # TODO: There is probably a neater way to do this, but this information is not relevant for now.
         stack_entry_kwargs["internal_method_name"] = (
-            f"{internal_method.group(0)}, {internal_method.group(1)}"
+            f"{internal_method.group(1)}, {internal_method.group(2)}"
         )
     elif origin_type == "_RemoteTraceback:":
         # TODO: I am uncertain how unique this is.
@@ -482,7 +491,7 @@ if __name__ == "__main__":
 
     # Having a static path helps with debugging a specific notebook.
     static_path = None
-    # static_path = "./data/notebooks/nbdata_err_kaggle/nbdata_err_kaggle/nbdata_k_error/nbdata_k_error/230102/adeelsoomro00_introduction-to-python.ipynb"
+    static_path = "/workspaces/jupyter_nbs_empirical/data/harddrive/GitHub/nbdata_error_g/nbdata_g_error_100-199/00199-715-convnet-experiments-checkpoint.ipynb"
     if not static_path:
         # Loads all notebooks.
         files = list(
