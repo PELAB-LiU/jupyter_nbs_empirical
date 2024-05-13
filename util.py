@@ -20,18 +20,25 @@ except ImportError:
     pass
 
 def extract_libs_from_exp_mllib(row):
-    str_exp_mllib = row["exp_mllib"]
-    if (not str_exp_mllib) or pd.isna(str_exp_mllib):
-        return None
-    try:
-        tmp = eval(str_exp_mllib)
-        res = set()
-        for i in range(len(tmp)):
-            res.add(tmp[i]["library"])
-        return res
-    except:
-        print("cannot parse to list, eid:",row["eid"])
-        return None
+    exp_mllib = row["exp_mllib"]
+    tmp = None
+    if exp_mllib:
+        if isinstance(exp_mllib, str):
+            if not pd.isna(exp_mllib):
+                try:
+                    tmp = eval(exp_mllib)
+                except:
+                    print("cannot parse to list, eid:",row["eid"])
+                    return None
+        if isinstance(exp_mllib, list):
+            tmp = exp_mllib
+        if tmp:
+            res = set()
+            for i in range(len(tmp)):
+                res.add(tmp[i]["library"])
+            return res
+    return tmp
+    
 
 def get_exp_mllib(path_exp_libs, df_err):
     res = {eid:None for eid in df_err.eid}
@@ -55,6 +62,11 @@ def parse_traceback(str_traceback):
     """Parses the traceback to remove all ansii escape characters."""
     ansi_escape = re.compile(r'\\x1b\[[0-9;]*m') #re.compile(r'(?:\x1B[@-_]|[\x80-\x9F])[0-?]*[ -/]*[@-~]')
     return ansi_escape.sub('', str_traceback)
+
+def parse_traceback_2(str_traceback):
+    ansi_escape = re.compile(r'\x1B(?:[@-Z\\-_]|\[[0-?]*[ -/]*[@-~])')
+    result = ansi_escape.sub('', str_traceback)
+    return result
 
 def list_traceback(txt_traceback):
     try:
@@ -469,9 +481,9 @@ def select_builtin_exps(df_err_lib_filtered, source):
     print("\nIn total, {0} exception types are selected for further analysis".format(n_selected_exps))
     
     
-def reload_module(tar_module):
-    import importlib
-    importlib.reload(tar_module)
+# def reload_module(tar_module):
+#     import importlib
+#     importlib.reload(tar_module)
 #     import tar_module
 
 def get_python_exception_names():
