@@ -12,12 +12,15 @@ from sentence_transformers import SentenceTransformer
 from sklearn.neighbors import NearestNeighbors
 from sklearn.preprocessing import StandardScaler
 import nltk
+from nltk.corpus import stopwords
 import string
 from kneed import KneeLocator
 import math
 import editdistance
 import hashlib
 from typing import Sequence, Iterable, Hashable, List, Optional, Union
+from bigtree import Node
+from sklearn.cluster import AgglomerativeClustering
 T = Iterable[Hashable]
 
 def preprocess_text(text):
@@ -29,8 +32,8 @@ def preprocess_text(text):
     cleaned_text = re.sub(r'\S+\.\S+', ' ', cleaned_text)
     # remove words containing digits
     cleaned_text = re.sub(r'([a-zA-Z_.|:;-]*\d+[a-zA-Z_.|:;-]*)+', ' ', cleaned_text)
-    # replace strange symbols to whitespace
-    cleaned_text = re.sub(r'[^A-Za-z0-9\s]', ' ', cleaned_text)
+    # replace strange symbols (not letters/ /_) to whitespace
+    cleaned_text = re.sub(r'[^\w\s]', ' ', cleaned_text) #r'[^A-Za-z0-9\s]'
     # just keep one space
     cleaned_text = re.sub(r' +', r' ', cleaned_text)
     
@@ -38,7 +41,7 @@ def preprocess_text(text):
     tokens = nltk.word_tokenize(cleaned_text)
     res = []
     for token in tokens:
-        if (token not in string.punctuation) and bool(re.search(r'\d', token)) != True:
+        if (token not in string.punctuation) and (token not in stopwords.words('english')) and bool(re.search(r'\d', token)) != True:
             res.append(re.sub('[^A-Za-z-]+', '', token).strip().lower())
     return " ".join(res)
 
@@ -95,15 +98,15 @@ def vectorizer_word2vec(sentence, w2v_vectors, embedding_dim, aggregation='mean'
         return vec.flatten()
     
 # elbow method for optimal value of k in kmeans
-def elbow_for_kmean(X_array, K_range = range(1, 10)):
+def elbow_for_kmean(X_array, K_range = range(2, 10)):
     #distortions = []
     inertias = []
     for k in K_range:
         # Building and fitting the model
         kmeanModel = KMeans(n_clusters=k).fit(X_array)
         kmeanModel.fit(X_array)
-        #distortions.append(sum(np.min(cdist(X_array, kmeanModel.cluster_centers_, 'euclidean'), axis=1)) / X_array.shape[0])
-        inertias.append(kmeanModel.inertia_)
+        inertias.append(eval_cluster_silhouette(X_array, kmeanModel.labels_))
+#         inertias.append(kmeanModel.inertia_)
     return inertias
 
 # X_array is assumed to be vectorized
@@ -148,11 +151,42 @@ def cluster_dbscan(X_array, eps=0.2, min_samples=400):
     print('Estimated no. of noise points: %d' % no_noise)
     return cluster_labels
 
+# select n_components of pca based on cutoff value of explained variance ratio
+def select_pca_n_basedon_variance(vectorized_arr, variance_cutoff=0.8):
+    pca = PCA().fit(vectorized_arr)
+    var_ratios = np.cumsum(pca.explained_variance_ratio_)
+    for i in range(len(var_ratios)):
+        if var_ratios[i] >= variance_cutoff:
+            print("pca: {} components can explain {:.2%} variance of the data".format(i+1, var_ratios[i]))
+            return i+1
+
 # reduce the dimensionality of the data using PCA 
-def pca(vectorized_arr, n_component = 2):
-    pca = PCA(n_components=n_component) 
+def pca(vectorized_arr, n_components = 2):
+    pca = PCA(n_components=n_components) 
     reduced_data = pca.fit_transform(vectorized_arr)
     return reduced_data
+
+# hierarchical - AgglomerativeClustering
+def cluster_agglomerative(X_array, n_clusters=2, linkage="ward"):
+    model = AgglomerativeClustering(n_clusters = n_clusters, linkage=linkage)
+    model.fit(X_array)
+    return model
+
+def aggcluster_to_tree(agg_model):
+    added = {}
+    for node_id, x in enumerate(agg_model.children_, agg_model.n_leaves_):
+        node_childen = []
+        for id_x in x:
+            if id_x not in added:
+                node_child = Node(id_x+1) # +1, otherwise it will complain that id=0 is null...
+                added[id_x] = node_child
+            else:
+                node_child = added[id_x]
+            node_childen.append(node_child)
+        if not node_childen:
+            print("no child node", node_id)
+        added[node_id] = Node(node_id+1, children=node_childen) # +1, otherwise it will complain that id=0 is null...
+    return next(iter(added.values())).root
 
 ## ===================evaluate based on levenshtein similarity===================
 

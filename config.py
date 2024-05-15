@@ -20,7 +20,7 @@ path_github_cluster_valueerr = path_github_error_analysis.joinpath("cluster_sele
 
 path_kaggle_error_process = path_default.joinpath("nbdata_k_error")
 path_kaggle_error_analysis = path_kaggle_error_process.joinpath("analysis_kerr")
-path_kaggle_cluster_valueerr = path_kaggle_error_analysis.joinpath("cluster_selection_valueerror_2/df_mlerr_g_mlbugs_valueerr_dedup.xlsx")
+path_kaggle_cluster_valueerr = path_kaggle_error_analysis.joinpath("cluster_selection_valueerror_2/df_mlerr_k_mlbugs_valueerr_dedup.xlsx")
 
 
 path_w2v_models = path_default.joinpath("w2v_models")
