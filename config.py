@@ -23,7 +23,7 @@ path_kaggle_error_analysis = path_kaggle_error_process.joinpath("analysis_kerr")
 path_kaggle_cluster_valueerr = path_kaggle_error_analysis.joinpath("cluster_selection_valueerror_2/df_mlerr_k_mlbugs_valueerr_dedup.xlsx")
 
 
-path_w2v_models = path_default.joinpath("w2v_models")
+path_w2v_models = path_default.joinpath("retrained_embeddings")
 
 top_lib_names = [
     "pandas",
