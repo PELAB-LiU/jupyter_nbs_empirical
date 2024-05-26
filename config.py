@@ -62,6 +62,11 @@ builtin_exps_uninteresting = ["nameerror", "memoryerror", "keyboardinterrupt", "
                          "oserror", "ioerror", "brokenpipeerror", "blockingioerror",
                          "connectionerror", "connectionreseterror", "connectionrefusederror", "connectionabortederror", "systemexit"]
 
+NB_SOURCE = {
+    "kaggle": 1,
+    "github": 2
+}
+
 err_lib_percent_cutoff_k = 0.5
 err_lib_count_cutoff_k = 100
 

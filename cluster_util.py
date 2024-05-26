@@ -53,6 +53,21 @@ def preprocess_text_transformer(text):
     cleaned_text = re.sub(r' +', r' ', cleaned_text)
     return cleaned_text.strip().lower()
 
+def preprocess_text_similarity(text):
+    cleaned_text = re.sub(r'\r\n|\r|\n|\\n', ' ', str(text))
+    # remove url/filepath..
+    cleaned_text = re.sub(r'\S+\.\S+', ' ', cleaned_text)
+    # remove words containing digits and _
+    cleaned_text = re.sub(r'\b\w*[\d_]\w*\b', ' ', cleaned_text)
+    # Remove string inside single quotes
+    cleaned_text = re.sub(r"'.*?'", '', cleaned_text)
+    # remove punctuation
+    cleaned_text = cleaned_text.translate(str.maketrans('', '', string.punctuation))
+    # clean extra white space
+    cleaned_text = re.sub(r'\s+', r' ', cleaned_text)
+    # lower case
+    return cleaned_text.strip().lower()
+
 def scaling(X_array):
     return StandardScaler().fit_transform(X_array)
 
@@ -248,9 +263,7 @@ def eval_cluster_groundtruth(Y_true, X_array):
 
 ## ===================other similarity===================
 
-def jaccard_similarity(list1, list2):
-    s1 = set(list1.split(" "))
-    s2 = set(list2.split(" "))
+def jaccard_similarity(s1, s2):
     return float(len(s1.intersection(s2)) / len(s1.union(s2)))
 
 def generateHash(target_str):
