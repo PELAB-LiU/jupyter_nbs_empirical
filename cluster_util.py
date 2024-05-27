@@ -111,6 +111,31 @@ def vectorizer_word2vec(sentence, w2v_vectors, embedding_dim, aggregation='mean'
         return vec.flatten()
     elif aggregation == 'sum':
         return vec.flatten()
+
+    
+def elbow_finder(cumsum_percentage, title="Knee point detection", xlabel="cluster n", ylabel="cumulative coverage%"): 
+#     # Plot
+#     plt.figure(figsize=(10, 4))
+#     plt.plot(np.arange(1, len(cumsum_percentage) + 1), cumsum_percentage, marker='o', linestyle='--')
+#     plt.xlabel(xlabel)
+#     plt.ylabel(ylabel)
+#     plt.title(title)
+#     plt.show()
+
+    # Find the knee point
+    knee_locator = KneeLocator(np.arange(1, len(cumsum_percentage) + 1), cumsum_percentage, curve='concave')
+    elbow_point = knee_locator.elbow
+
+    print(f"The knee point is at number: {elbow_point}")
+
+    # Plot with elbow point highlighted
+    plt.figure(figsize=(10, 4))
+    plt.plot(np.arange(1, len(cumsum_percentage) + 1), cumsum_percentage, marker='o', linestyle='--')
+    plt.axvline(elbow_point, color='r', linestyle='-')
+    plt.xlabel(xlabel)
+    plt.ylabel(ylabel)
+    plt.title(title)
+    plt.show()
     
 # elbow method for optimal value of k in kmeans
 def elbow_for_kmean(X_array, K_range = range(2, 10)):
