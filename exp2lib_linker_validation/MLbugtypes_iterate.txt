@@ -1,0 +1,71 @@
+//
+Model
+GPU usage
+API
+Tensors and inputs
+Training
+---------------
+Shape mismatch
+API misuse
+Numeric error
+Type mismatch
+Architecture convention violation
+Performance bug
+---------------
+Model
+	Data
+	structure
+	training
+Software
+	memory
+	API
+	numerical
+	concurrency
+
+
+//
+API
+Data
+Control and sequence
+Intialization
+Logic
+Processing
+Data flow
+---------
+Interface,integration,system bugs
+coding bugs, syntax error
+data bug
+structural bugs
+	control flow bugs
+	data flow bugs
+	initialization bugs
+	logic bugs
+	processing bugs
+
+
+
+// program failures of DL jobs
+Deep learning specific
+	GPU/CPU out of memory
+	API misuse
+	Tensor mismatch
+	Loss nan
+Execution environment
+	Path/library not found
+	permission denied
+General code error
+	illegal argument
+	type mismatch
+	key not found
+	null reference
+	attribute not found
+	syntax error
+	illegal index
+	undefined variable
+	not implemented
+	devision by zero
+Data
+	corrupt data
+	unexpected encoding
+
+

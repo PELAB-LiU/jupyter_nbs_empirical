@@ -294,6 +294,12 @@ def jaccard_similarity(s1, s2):
 def generateHash(target_str):
     return hashlib.md5(repr(target_str).encode('utf-8')).hexdigest()
 
+def similarity_check(t1,t2):
+    # t1,t2: [0]-hash_evalue_tokenized (check for complete duplication)
+    # [1]: evalue_processed (check for jaccard similarity)
+    if t1[0]==t2[0]:
+        return 1
+    return jaccard_similarity(t1[1], t2[1])
 
     
 def print_clusters(num_clusters, res_clusters, n_sample=10):
