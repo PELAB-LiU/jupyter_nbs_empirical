@@ -128,9 +128,12 @@ def elbow_finder(cumsum_percentage, title="Knee point detection", xlabel="cluste
 
     print(f"The knee point is at number: {elbow_point}")
 
+    plot_elbow(cumsum_percentage, elbow_point, title="Knee point detection", xlabel="cluster n", ylabel="cumulative coverage%")
+
+def plot_elbow(cumsum_percentage, elbow_point, title="Knee point detection", xlabel="cluster n", ylabel="cumulative coverage%"):
     # Plot with elbow point highlighted
     plt.figure(figsize=(10, 4))
-    plt.plot(np.arange(1, len(cumsum_percentage) + 1), cumsum_percentage, marker='o', linestyle='--')
+    plt.plot(np.arange(1, len(cumsum_percentage) + 1), cumsum_percentage, marker='o', linestyle='--', markersize=2)
     plt.axvline(elbow_point, color='r', linestyle='-')
     plt.xlabel(xlabel)
     plt.ylabel(ylabel)
