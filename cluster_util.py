@@ -123,7 +123,7 @@ def elbow_finder(cumsum_percentage, title="Knee point detection", xlabel="cluste
 #     plt.show()
 
     # Find the knee point
-    knee_locator = KneeLocator(np.arange(1, len(cumsum_percentage) + 1), cumsum_percentage, curve='concave')
+    knee_locator = KneeLocator(np.arange(1, len(cumsum_percentage) + 1), cumsum_percentage, curve='concave', direction="increasing", S=1)
     elbow_point = knee_locator.elbow
 
     print(f"The knee point is at number: {elbow_point}")

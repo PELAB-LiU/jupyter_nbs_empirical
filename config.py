@@ -67,11 +67,14 @@ NB_SOURCE = {
     "github": 2
 }
 
-err_lib_percent_cutoff_k = 0.5
-err_lib_count_cutoff_k = 100
+cluster_size_cuttoff_k = 10
+cluster_size_cuttoff_g = 100
 
-err_lib_percent_cutoff_g = 0.5
-err_lib_count_cutoff_g = 400
+# err_lib_percent_cutoff_k = 0.5
+# err_lib_count_cutoff_k = 100
+
+# err_lib_percent_cutoff_g = 0.5
+# err_lib_count_cutoff_g = 400
 
 exception_list_python = [
     "generatorexit",
