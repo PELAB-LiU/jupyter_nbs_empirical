@@ -54,14 +54,6 @@ top_lib_names = [
 
 builtin_exps_excluded = ["keyboardinterrupt"]
 
-builtin_exps_uninteresting = ["nameerror", "memoryerror", "keyboardinterrupt", "timeouterror", "windowserror",
-                         "pendingdeprecationwarning", "deprecationwarning", 
-                         "userwarning", "warning", "runtimewarning"
-                         "modulenotfounderror", "importerror", "notimplementederror", 
-                         "filenotfounderror", "fileexistserror", "isadirectoryerror", "notadirectoryerror","eoferror",  "permissionerror", "unicodeerror","unicodedecodeerror", "unicodeencodeerror"
-                         "oserror", "ioerror", "brokenpipeerror", "blockingioerror",
-                         "connectionerror", "connectionreseterror", "connectionrefusederror", "connectionabortederror", "systemexit"]
-
 NB_SOURCE = {
     "kaggle": 1,
     "github": 2
