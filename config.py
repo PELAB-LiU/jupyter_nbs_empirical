@@ -78,8 +78,7 @@ label_ML_pipeline = {"environment setup":["environment setup (module not found, 
                     "model construction":["model construction (include compilation and visualization/summary)"],
                     "training":["training/validation (grid search)"],
                     "evaluation/prediction":["evaluation/inference (history plot, metric visualization)"],
-                    "not applicable":["not-applicable (sub-labels needed, e.g., tutorials, physics simulation, ..)","not applicable - tutorial notebook","not applicable - physics","not applicable - education"],
-                    "unknown":["unknown"]}
+                    "no ML pipeline":["not-applicable (sub-labels needed, e.g., tutorials, physics simulation, ..)","not applicable - tutorial notebook","not applicable - physics","not applicable - education","unknown"]}
 # sum3 ---------------------------------------------------------------------------------------------------------------------
 label_if_ML_bug = {"ML bug":["ML/data science library related (ML imports, error raised by library)"],
                   "python bug":["general code error"],
