@@ -62,21 +62,22 @@ NB_SOURCE = {
 summed_label_names = ["label_root_cause", "label_ML_pipeline", "label_if_ML_bug", "label_refined_exp_type"]
 
 # sum1 ---------------------------------------------------------------------------------------------------------------------
-label_root_cause = {"Data confusion":["misunderstanding of data structure", "misunderstanding of ML model"],
-                    "API misuse":["misunderstanding of APIs","misunderstanding of libraries", "invalid argument"],
-                    "nb specific":["nb specific - execution order","nb specific - previous cell error","nb specific - need execute future cells"],
-                    "implementation error":["did not import", "undefined variable", "undefined function", "typo", "wrong implementation"],
-                   "insufficient resources":["insufficient resources"],
+label_root_cause = {"data":["misunderstanding of data structure", "misunderstanding of ML model"],
+                    "API":["misunderstanding of APIs","misunderstanding of libraries", "invalid argument"],
+                    "NB specific":["nb specific - execution order","nb specific - previous cell error","nb specific - need execute future cells"],
+                    "implementation":["did not import", "undefined variable", "undefined function", "typo", "wrong implementation"],
+                   "resources":["insufficient resources"],
                    "unknown": ["unknown"],
-                   "environment problem":["module not installed", "change of environment", "file/path not found or exist", "library versions incompatible", "settings(permission, environment)", "external control (window closed)"],
-                   "API change":["API change"]}
+                   "environment":["module not installed", "change of environment", "file/path not found or exist", "library versions incompatible", "settings(permission, environment)", "external control (window closed)"],
+                    "library":["API change", "error inside library"], 
+                    "intentional":["intentional"]}
 # sum2 ---------------------------------------------------------------------------------------------------------------------
 label_ML_pipeline = {"environment setup":["environment setup (module not found, file/path not found)"],
-                    "data prepare":["data preparation/preprocessing"],
+                    "data preparation":["data preparation/preprocessing"],
                     "data visualization": ["data visualization"],
                     "model construction":["model construction (include compilation and visualization/summary)"],
                     "training":["training/validation (grid search)"],
-                    "evaluation and prediction":["evaluation/inference (history plot, metric visualization)"],
+                    "evaluation/prediction":["evaluation/inference (history plot, metric visualization)"],
                     "not applicable":["not-applicable (sub-labels needed, e.g., tutorials, physics simulation, ..)","not applicable - tutorial notebook","not applicable - physics","not applicable - education"],
                     "unknown":["unknown"]}
 # sum3 ---------------------------------------------------------------------------------------------------------------------
@@ -84,22 +85,22 @@ label_if_ML_bug = {"ML bug":["ML/data science library related (ML imports, error
                   "python bug":["general code error"],
                   "unknown":["unknown"]}
 # sum4 ---------------------------------------------------------------------------------------------------------------------
-label_refined_exp_type = {"indexerror":["indexerror-nd","indexerror-1d", "indexerror"],
-                         "nameerror":["module not found", "variable not found", "function not found ", "class not found","nameerror"],
-                         "attributeerror":["attributeerror"], 
-                          "assertionerror":["assertionerror"], 
-                          "requesterror" : ["requesterror"], 
-                          "syntaxerror":["syntaxerror","indentationerror"],
+label_refined_exp_type = {"index":["indexerror-nd","indexerror-1d", "indexerror"],
+                         "name":["module not found", "variable not found", "function not found ", "class not found","nameerror"],
+                         "attribute":["attributeerror"], 
+                          "assertion":["assertionerror"], 
+                          "request" : ["requesterror"], 
+                          "syntax":["syntaxerror","indentationerror"],
                          "other":["zerodivisionerror","incompleteparseerror","systemerror","systemexit","constraint violation (database)", "executablenotfound", "incompleteparseerror", "illegalmoveerror", "qiskiterror", "nosuchwindowexception"],
-                         "valueerror":["valueerror - data value violation", "valueerror - feature name mismatch", "tensor shape mismatch","valueerror", "valueerror - data range mismatch"],
-                         "ioerror":["fileexistserror","unsupported file type (read file)", "file permission", "filenotfounderror","jsondecodeerror"],
+                         "value":["valueerror - data value violation", "valueerror - feature name mismatch", "tensor shape mismatch","valueerror", "valueerror - data range mismatch"],
+                         "io":["fileexistserror","unsupported file type (read file)", "file permission", "filenotfounderror","jsondecodeerror"],
                          "unknown":["unknown"],
-                         "API argument violation":["wrong arguments to API"],
-                         "resourceerror":["out of space (disk)", "out of memory (OOM)"],
-                         "keyerror":["keyerror","notfounderror"],
-                         "runtimeerror":["initialization error (call mul-times, wrong order)","runtimeerror"],
-                         "typeerror":["typeerror", "typeerror-notsubscriptable", "typeerror-op", "typeerror-notiterable", "typeerror-unhashable","typeerror-notcallable", "cast exception", "unsupported broadcast"],
-                         "environmenterror": ["environment setup", "importerror"]}
+                         "API arg":["wrong arguments to API"],
+                         "resource":["out of space (disk)", "out of memory (OOM)"],
+                         "key":["keyerror","notfounderror"],
+                         "runtime":["initialization error (call mul-times, wrong order)","runtimeerror"],
+                         "type":["typeerror", "typeerror-notsubscriptable", "typeerror-op", "typeerror-notiterable", "typeerror-unhashable","typeerror-notcallable", "cast exception", "unsupported broadcast"],
+                         "environment": ["environment setup", "importerror"]}
 
 # summarize manual label config (categories) end-------------------------
 
