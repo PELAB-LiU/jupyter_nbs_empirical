@@ -1,6 +1,6 @@
 import math
 import numpy as np
-from scipy.stats import chi2_contingency
+from scipy.stats import chi2_contingency, barnard_exact
 import pickle
 
 # summarize the statistics
@@ -54,3 +54,14 @@ def chisquare_test(dict1, dict2, label_key="", min_dp = 5):
     print("Chi2ContingencyResult: pvalue is ", pvalue_chisquare, 
           "(Not statistically different)" if pvalue_chisquare > 0.05 else "(Statistically different)")
     return pvalue_chisquare
+
+
+# for 2x2
+def barnard_test(dict1, dict2, label_key=""):
+    table_label_key_gk = np.array(([v for k, v in dict1.items()],[v for k, v in dict2.items()])).T
+    print("\n"+label_key)
+#     display(table_label_key_gk)
+    pvalue_be = barnard_exact(table_label_key_gk).pvalue
+    print("Barnard exact result: pvalue is ", pvalue_be, 
+          "(Not statistically different)" if pvalue_be > 0.05 else "(Statistically different)")
+    return pvalue_be
