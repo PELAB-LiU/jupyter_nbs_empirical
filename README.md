@@ -47,8 +47,6 @@ We then perform manual labeling and reviewing on the sampled dataset, the result
 ## Data
 All the related data can be found on [zenodo](https://doi.org/10.5281/zenodo.14070488), including:
 * GitHub and Kaggle notebooks that contain error outputs.
-    + GitHub notebooks are from [The Stack repository](https://huggingface.co/datasets/bigcode/the-stack-dedup/tree/main/data/jupyter-notebook).
-    + Kaggle notebooks are public notebooks on [Kaggle platform](https://www.kaggle.com/) from year 2023.
 * Identified programming language results of GitHub notebooks.
 * Identified ML library results from Kaggle notebooks.
 * Datasets of crashes from GitHub and Kaggle.
