@@ -9,9 +9,10 @@ We collect notebooks from two sources:
 * GitHub:
     + Download from the deduplicated version of [The stack dataset](https://huggingface.co/datasets/bigcode/the-stack-dedup/tree/main/data/jupyter-notebook)[1]. 
     + The downloaded files are .parquet files that can be transformed into .ipynb files like [this](./nbdata_github_thestack/parquet_to_nbs.ipynb).
-
+    + GitHub notebooks used in this study is between 2015.1.1 and 2022.3.31.
 * Kaggle:
     + Query and download via [KGTorrent](https://github.com/collab-uniba/KGTorrent) [2] with the [Meta Kaggle dataset](https://www.kaggle.com/datasets/kaggle/meta-kaggle). The Meta Kaggle dataset we use is from Feb. 2024.
+    + Kaggle notebooks used in this paper is from 2023.1.1 to 2024.1.1.
 
 We then filter the dataset based on:
 * Notebooks with error outputs:
@@ -44,10 +45,10 @@ We then perform manual labeling and reviewing on the sampled dataset, the result
     + [data_analysis_[statistictests].ipynb](./data_analysis_[statistictests].ipynb)
 
 ## Data
-All the related data can be found [here](https://doi.org/10.5281/zenodo.14070488), including:
-* All Kaggle notebooks from year 2023.
-* The GitHub notebooks can be downloaded from [The Stack repository](https://huggingface.co/datasets/bigcode/the-stack-dedup/tree/main/data/jupyter-notebook).
-* All GitHub and Kaggle notebooks containing error outputs.
+All the related data can be found on [zenodo](https://doi.org/10.5281/zenodo.14070488), including:
+* GitHub and Kaggle notebooks that contain error outputs.
+    + GitHub notebooks are from [The Stack repository](https://huggingface.co/datasets/bigcode/the-stack-dedup/tree/main/data/jupyter-notebook).
+    + Kaggle notebooks are public notebooks on [Kaggle platform](https://www.kaggle.com/) from year 2023.
 * Identified programming language results of GitHub notebooks.
 * Identified ML library results from Kaggle notebooks.
 * Datasets of crashes from GitHub and Kaggle.
