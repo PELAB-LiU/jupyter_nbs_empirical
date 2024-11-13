@@ -7,7 +7,7 @@ It is an empirical study on software crashes in ML programs written in Jupyter n
 
 We collect notebooks from two sources:
 * GitHub:
-    + Download from the deduplicated version of [The stack dataset](https://huggingface.co/datasets/bigcode/the-stack-dedup/tree/main/data/jupyter-notebook)[1]. 
+    + Download from the deduplicated version of [The Stack](https://huggingface.co/datasets/bigcode/the-stack-dedup/tree/main/data/jupyter-notebook)[1] dataset. 
     + The downloaded files are .parquet files that can be transformed into .ipynb files like [this](./nbdata_github_thestack/parquet_to_nbs.ipynb).
     + GitHub notebooks used in this study is between 2015.1.1 and 2022.3.31.
 * Kaggle:
@@ -44,9 +44,9 @@ We then perform manual labeling and reviewing on the sampled dataset, the result
 * Statistic tests:
     + [data_analysis_[statistictests].ipynb](./data_analysis_[statistictests].ipynb)
 
-## Data
+## Shared Dataset
 All the related data can be found on [zenodo](https://doi.org/10.5281/zenodo.14070488), including:
-* GitHub and Kaggle notebooks that contain error outputs.
+* GitHub and Kaggle notebooks that *contain error outputs*.
 * Identified programming language results of GitHub notebooks.
 * Identified ML library results from Kaggle notebooks.
 * Datasets of crashes from GitHub and Kaggle.
@@ -54,6 +54,7 @@ All the related data can be found on [zenodo](https://doi.org/10.5281/zenodo.140
 * Sampled crashes and associated notebooks.
 * Manual labeling and reviewing results.
 
+* Note: the *full* GitHub notebook dataset is easily downloadable from [The Stack](https://huggingface.co/datasets/bigcode/the-stack-dedup/tree/main/data/jupyter-notebook), For the Kaggle notebooks, which have daily HTTP download limitations, we provide access upon request.
 
 ### References
 [1] D. Kocetkov, R. Li, L. B. Allal, J. Li, C. Mou, C. M. Ferrandis, Y. Jernite, M. Mitchell, S. Hughes, T. Wolf, D. Bahdanau, L. von Werra, and H. de Vries, “The Stack: 3 TB of permissively licensed source code,” in arXiv:2211.15533, 2022.
