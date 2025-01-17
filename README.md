@@ -3,6 +3,9 @@
 This is the official repository for our paper "Why do Machine Learning Notebooks Crash?", which is currently under review.
 It is an empirical study on software crashes in ML programs written in Jupyter notebooks.
 
+Paper link: https://arxiv.org/abs/2411.16795
+
+
 ## Expirimental Setup:
 
 We collect notebooks from two sources:
