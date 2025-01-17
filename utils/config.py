@@ -2,7 +2,7 @@ from pathlib import Path
 
 path_drive_kaggle = r"D:\Data_NBs\Kaggle"
 
-yirans_path_default = Path(r"C:\Users\yirwa29\Downloads\Dataset-Nb")
+yirans_path_default = Path(r"C:\Users\yirwa29\Downloads\data_jupyter_nbs_empirical")
 willems_path_default = Path(".").absolute().joinpath("data")
 
 path_default = yirans_path_default
@@ -11,19 +11,10 @@ willems_path_drive = path_default.joinpath("harddrive")
 willems_path_drive_2 = Path(r"D:\Data_NBs")
 path_drive = willems_path_drive
 
-
 print(f"{path_default=}")
 
 path_github_error_process = path_default.joinpath("nbdata_g_error")
-path_github_error_analysis = path_github_error_process.joinpath("analysis_gerr")
-path_github_cluster_valueerr = path_github_error_analysis.joinpath("cluster_selection_valueerror_2/df_mlerr_g_mlbugs_valueerr_dedup.xlsx")
-
 path_kaggle_error_process = path_default.joinpath("nbdata_k_error")
-path_kaggle_error_analysis = path_kaggle_error_process.joinpath("analysis_kerr")
-path_kaggle_cluster_valueerr = path_kaggle_error_analysis.joinpath("cluster_selection_valueerror_2/df_mlerr_k_mlbugs_valueerr_dedup.xlsx")
-
-
-path_w2v_models = path_default.joinpath("retrained_embeddings")
 
 top_lib_names = [
     "pandas",
