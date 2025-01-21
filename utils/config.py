@@ -13,8 +13,8 @@ path_drive = willems_path_drive
 
 print(f"{path_default=}")
 
-path_github_error_process = path_default.joinpath("nbdata_g_error")
-path_kaggle_error_process = path_default.joinpath("nbdata_k_error")
+path_github_error_process = path_default.joinpath("GitHub")
+path_kaggle_error_process = path_default.joinpath("Kaggle")
 
 top_lib_names = [
     "pandas",
