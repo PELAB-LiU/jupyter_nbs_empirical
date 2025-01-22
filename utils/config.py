@@ -82,14 +82,14 @@ label_refined_exp_type = {"index":["indexerror-nd","indexerror-1d", "indexerror"
                           "request" : ["requesterror"], 
                           "syntax":["syntaxerror","indentationerror"],
                          "other":["zerodivisionerror","incompleteparseerror","systemerror","systemexit","constraint violation (database)", "executablenotfound", "incompleteparseerror", "illegalmoveerror", "qiskiterror", "nosuchwindowexception"],
-                         "value":["valueerror - data value violation", "valueerror - feature name mismatch", "tensor shape mismatch","valueerror", "valueerror - data range mismatch"],
+                         "value":["valueerror - data value violation", "valueerror - feature name mismatch", "tensor shape mismatch","valueerror", "valueerror - data range mismatch", "cast exception", "unsupported broadcast"],
                          "io":["fileexistserror","unsupported file type (read file)", "file permission", "filenotfounderror","jsondecodeerror"],
                          "unknown":["unknown"],
                          "API arg":["wrong arguments to API"],
                          "resource":["out of space (disk)", "out of memory (OOM)"],
                          "key":["keyerror","notfounderror"],
                          "runtime":["initialization error (call mul-times, wrong order)","runtimeerror"],
-                         "type":["typeerror", "typeerror-notsubscriptable", "typeerror-op", "typeerror-notiterable", "typeerror-unhashable","typeerror-notcallable", "cast exception", "unsupported broadcast"],
+                         "type":["typeerror", "typeerror-notsubscriptable", "typeerror-op", "typeerror-notiterable", "typeerror-unhashable","typeerror-notcallable"],
                          "environment": ["environment setup", "importerror"]}
 
 # summarize manual label config (categories) end-------------------------
