@@ -43,6 +43,14 @@ top_lib_names = [
     "datasets",
 ]
 
+dl_lib_names = [
+    "tensorflow",
+    "torch",
+    "keras",
+    "torchvision",
+    "transformers",
+]
+
 builtin_exps_excluded = ["keyboardinterrupt"]
 
 NB_SOURCE = {

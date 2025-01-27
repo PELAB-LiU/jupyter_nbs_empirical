@@ -255,6 +255,18 @@ def lib_alias_isML(lib_alias):
             return False
     return False
 
+def lib_alias_isDL(lib_alias):
+    if lib_alias:
+        try:
+            lib_alias = eval(lib_alias)
+            for imp in lib_alias:
+                
+                if imp[0] and (simple_lib_parser(imp[0]) in config.dl_lib_names):
+                    return True
+        except:
+            return False
+    return False
+
 # def extract_lib(txt_traceback):
 #     txt_traceback = txt_traceback.replace("\\\\", "/")
 #     #print(txt_traceback)
