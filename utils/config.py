@@ -61,46 +61,80 @@ NB_SOURCE = {
 summed_label_names = ["label_root_cause", "label_ML_pipeline", "label_if_ML_bug", "label_refined_exp_type"]
 
 # sum1 ---------------------------------------------------------------------------------------------------------------------
-label_root_cause = {"data":["misunderstanding of data structure", "misunderstanding of ML model"],
-                    "API":["misunderstanding of APIs","misunderstanding of libraries", "invalid argument"],
+label_root_cause = {"data confusion":["misunderstanding of data structure"],
+                    "ML model confusion": ["misunderstanding of ML model"],
+                    "API misuse":["misunderstanding of APIs","misunderstanding of libraries", "invalid argument"],
                     "NB specific":["nb specific - execution order","nb specific - previous cell error","nb specific - need execute future cells"],
-                    "implementation":["did not import", "undefined variable", "undefined function", "typo", "wrong implementation"],
-                   "resources":["insufficient resources"],
+                    "implementation error":["did not import", "undefined variable", "undefined function", "typo", "wrong implementation"],
+                   "insufficient resource":["insufficient resources"],
                    "unknown": ["unknown"],
-                   "environment":["module not installed", "change of environment", "file/path not found or exist", "library versions incompatible", "settings(permission, environment)", "external control (window closed)"],
-                    "library":["API change", "error inside library"], 
-                    "intentional":["intentional"]}
+                   "environment setting":["module not installed", "change of environment", "file/path not found or exist", "library versions incompatible", "settings(permission, environment)", "external control (window closed)"],
+                    "library cause":["API change", "error inside library"]}
 # sum2 ---------------------------------------------------------------------------------------------------------------------
 label_ML_pipeline = {"environment setup":["environment setup (module not found, file/path not found)"],
                     "data preparation":["data preparation/preprocessing"],
                     "data visualization": ["data visualization"],
                     "model construction":["model construction (include compilation and visualization/summary)"],
                     "training":["training/validation (grid search)"],
-                    "evaluation/prediction":["evaluation/inference (history plot, metric visualization)"],
-                    "no ML pipeline":["not-applicable (sub-labels needed, e.g., tutorials, physics simulation, ..)","not applicable - tutorial notebook","not applicable - physics","not applicable - education","unknown"]}
+                    "evaluation/prediction":["evaluation/inference (history plot, metric visualization)"]}
 # sum3 ---------------------------------------------------------------------------------------------------------------------
 label_if_ML_bug = {"ML bug":["ML/data science library related (ML imports, error raised by library)"],
-                  "python bug":["general code error"],
-                  "unknown":["unknown"]}
+                  "python bug":["general code error"]}
 # sum4 ---------------------------------------------------------------------------------------------------------------------
-label_refined_exp_type = {"index":["indexerror-nd","indexerror-1d", "indexerror"],
-                         "name":["module not found", "variable not found", "function not found ", "class not found","nameerror"],
-                         "attribute":["attributeerror"], 
-                          "assertion":["assertionerror"], 
-                          "request" : ["requesterror"], 
-                          "syntax":["syntaxerror","indentationerror"],
-                         "other":["zerodivisionerror","incompleteparseerror","systemerror","systemexit","constraint violation (database)", "executablenotfound", "incompleteparseerror", "illegalmoveerror", "qiskiterror", "nosuchwindowexception"],
-                         "value":["valueerror - data value violation", "valueerror - feature name mismatch", "tensor shape mismatch","valueerror", "valueerror - data range mismatch", "cast exception", "unsupported broadcast"],
-                         "io":["fileexistserror","unsupported file type (read file)", "file permission", "filenotfounderror","jsondecodeerror"],
-                         "unknown":["unknown"],
-                         "API arg":["wrong arguments to API"],
-                         "resource":["out of space (disk)", "out of memory (OOM)"],
-                         "key":["keyerror","notfounderror"],
-                         "runtime":["initialization error (call mul-times, wrong order)","runtimeerror"],
-                         "type":["typeerror", "typeerror-notsubscriptable", "typeerror-op", "typeerror-notiterable", "typeerror-unhashable","typeerror-notcallable"],
-                         "environment": ["environment setup", "importerror"]}
+label_refined_exp_type = {"variable not found":["variable not found"], # name error
+                              "invalid argument":["wrong arguments to API"],
+                              "module not found":["module not found"], # name error
+                              "attribute error":["attributeerror"],
+                              "key error":["keyerror","notfounderror"],
+                              "tensor shape mismatch": ["tensor shape mismatch"], # value error
+                              "data value violation": ["valueerror - data value violation"], # value error
+                              "name error":["function not found ", "class not found","nameerror"],
+                              "value error":["cast exception", "valueerror - data range mismatch", "valueerror"],
+                              "index error":["indexerror-nd","indexerror-1d"],
+                              "OOM":["out of memory (OOM)"],
+                              "type error":["typeerror", "typeerror-notcallable", "typeerror-op", "typeerror-notsubscriptable", "typeerror-notiterable", "typeerror-unhashable"],
+                              "request error" : ["requesterror"],
+                              "unsupported broadcast": ["unsupported broadcast"], # value error
+                              "runtime error":["runtimeerror"],
+                              "model initialization error": ["initialization error (call mul-times, wrong order)"],
+                              "environment error": ["importerror", "environment setup"],
+                              "feature name mismatch": ["valueerror - feature name mismatch"], # value error
+                         "other":["syntaxerror","indentationerror", "zerodivisionerror", "assertionerror", "systemerror", "executablenotfound", "out of space (disk)", "unknown"],
+                         "io error":["filenotfounderror", "unsupported file type (read file)", "file permission", "fileexistserror", "jsondecodeerror", "incompleteparseerror"]}
+
+# label_refined_exp_type_old = {"index":["indexerror-nd","indexerror-1d", "indexerror"],
+#                          "name":["module not found", "variable not found", "function not found ", "class not found","nameerror"],
+#                          "attribute":["attributeerror"], 
+#                           "assertion":["assertionerror"], 
+#                           "request" : ["requesterror"], 
+#                           "syntax":["syntaxerror","indentationerror"],
+#                          "other":["zerodivisionerror","incompleteparseerror","systemerror","systemexit","constraint violation (database)", "executablenotfound", "incompleteparseerror", "illegalmoveerror", "qiskiterror", "nosuchwindowexception"],
+#                          "value":["valueerror - data value violation", "valueerror - feature name mismatch", "tensor shape mismatch","valueerror", "valueerror - data range mismatch", "cast exception", "unsupported broadcast"],
+#                          "io":["fileexistserror","unsupported file type (read file)", "file permission", "filenotfounderror","jsondecodeerror"],
+#                          "unknown":["unknown"],
+#                          "API arg":["wrong arguments to API"],
+#                          "resource":["out of space (disk)", "out of memory (OOM)"],
+#                          "key":["keyerror","notfounderror"],
+#                          "runtime":["initialization error (call mul-times, wrong order)","runtimeerror"],
+#                          "type":["typeerror", "typeerror-notsubscriptable", "typeerror-op", "typeerror-notiterable", "typeerror-unhashable","typeerror-notcallable"],
+#                          "environment": ["environment setup", "importerror"]}
 
 # summarize manual label config (categories) end-------------------------
+
+# summarize manual label abbr setting------------------------------
+exp2abbr = {"variable not found":"VAR","invalid argument":"ARG","module not found":"MODULE","attribute error":"ATTR",
+            "key error":"KEY","tensor shape mismatch":"TENSOR","data value violation":"DVALUE", 
+            "name error": "NAME", "value error":"VALUE", "index error":"INDEX", "OOM":"OOM", "type error":"TYPE",
+            "request error":"REQ","unsupported broadcast":"BCAST","runtime error":"RUNTIME",
+            "model initialization error": "INIT","environment error":"ENV","feature name mismatch": "VFEATURE",
+            "other": "OTHER","io error": "IO"}
+rc2abbr = {"API misuse":"API","NB specific":"NB","implementation error":"IMPL","environment setting":"ENV","data confusion":"DATA",
+           "unknown":"UNK","insufficient resource":"RSC", "ML model confusion": "MODEL", "library cause":"LIB"}
+mlpp2abbr = {'environment setup':"ENVS", 'data preparation':"DATAP", 'data visualization':"DATAV",
+             'model construction':"MCONS", 'training':"TRAIN", 'evaluation/prediction':"EVAL"}
+order_mlpp = ["environment setup", "data preparation", "data visualization", "model construction", "training", "evaluation/prediction"]
+
+# summarize manual label abbr setting end------------------------------
 
 cluster_size_cuttoff_k = 10
 cluster_size_cuttoff_g = 100
