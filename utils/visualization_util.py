@@ -46,7 +46,11 @@ def cal_weighted_sum(df_mlerr_label_config, cluster_res):
 
 
 def chisquare_test(dict1, dict2, label_key="", min_dp = 5, res_all = False):
-    table_label_key_gk = np.array(([v for k, v in dict1.items()],[v for k, v in dict2.items()])).T
+    list1, list2 = [],[]
+    for k in dict1.keys():
+        list1.append(dict1[k])
+        list2.append(dict2[k])
+    table_label_key_gk = np.array([list1,list2]).T
     table_label_key_gk = np.delete(table_label_key_gk, np.where(table_label_key_gk < min_dp)[0], axis=0)
     print("\n"+label_key)
     print("Removed number of features due to few(<5) data points:",len(dict1)-table_label_key_gk.shape[0],len(dict2)-table_label_key_gk.shape[0])
