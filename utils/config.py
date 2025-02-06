@@ -88,8 +88,8 @@ label_refined_exp_type = {"variable not found":["variable not found"], # name er
                               "key error":["keyerror","notfounderror"],
                               "tensor shape mismatch": ["tensor shape mismatch"], # value error
                               "data value violation": ["valueerror - data value violation"], # value error
-                              "name error":["function not found ", "class not found","nameerror"],
-                              "value error":["cast exception", "valueerror - data range mismatch", "valueerror"],
+                              "name error":["function not found ", "class not found","nameerror"], # name error
+                              "value error":["cast exception", "valueerror - data range mismatch", "valueerror"], # value error
                               "index error":["indexerror-nd","indexerror-1d"],
                               "OOM":["out of memory (OOM)"],
                               "type error":["typeerror", "typeerror-notcallable", "typeerror-op", "typeerror-notsubscriptable", "typeerror-notiterable", "typeerror-unhashable"],
