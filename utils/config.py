@@ -6,6 +6,7 @@ yirans_path_default = Path(r"C:\Users\yirwa29\Downloads\data_jupyter_nbs_empiric
 willems_path_default = Path(".").absolute().joinpath("data")
 
 path_default = yirans_path_default
+path_plot_default = Path(r"C:\Users\yirwa29\OneDrive - Linköpings universitet\SAProject\Paper2\figures_v2")
 
 willems_path_drive = path_default.joinpath("harddrive")
 willems_path_drive_2 = Path(r"D:\Data_NBs")
@@ -122,11 +123,11 @@ label_refined_exp_type = {"variable not found":["variable not found"], # name er
 # summarize manual label config (categories) end-------------------------
 
 # summarize manual label abbr setting------------------------------
-exp2abbr = {"variable not found":"VAR","invalid argument":"ARG","module not found":"MODULE","attribute error":"ATTR",
-            "key error":"KEY","tensor shape mismatch":"TENSOR","data value violation":"DVALUE", 
+exp2abbr = {"variable not found":"VNF","invalid argument":"IARG","module not found":"MODULE","attribute error":"ATTR",
+            "key error":"KEY","tensor shape mismatch":"TSHAPE","data value violation":"DVIOL", 
             "name error": "NAME", "value error":"VALUE", "index error":"INDEX", "OOM":"OOM", "type error":"TYPE",
-            "request error":"REQ","unsupported broadcast":"BCAST","runtime error":"RUNTIME",
-            "model initialization error": "INIT","environment error":"ENV","feature name mismatch": "VFEATURE",
+            "request error":"RERR","unsupported broadcast":"BCAST","runtime error":"RUNTIME",
+            "model initialization error": "INIT","environment error":"ENV","feature name mismatch": "FNAME",
             "other": "OTHER","io error": "IO"}
 rc2abbr = {"API misuse":"API","NB specific":"NB","implementation error":"IMPL","environment setting":"ENV","data confusion":"DATA",
            "unknown":"UNK","insufficient resource":"RSC", "ML model confusion": "MODEL", "library cause":"LIB"}
