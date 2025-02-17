@@ -32,7 +32,16 @@ def get_imports_nbs_static(path_tar, get_imports_func):
                                                 imp = get_imports_func(line)
                                                 if len(imp) > 0:
                                                     imports.extend(imp)
-                                res.append({"fname":f, "imports":set(imports)})
+                                imports = set(imports)
+                                # for data_analysis_[additional-manual_labels_libraries]
+                                if "keras" in imports:
+                                    imports.add("tensorflow/keras")
+                                    imports.remove("keras")
+                                if "tensorflow" in imports:
+                                    imports.add("tensorflow/keras")
+                                    imports.remove("tensorflow")
+                                # end
+                                res.append({"fname":f, "imports":imports})
                             else:
                                 print("wrong format of jupyter notebook", f)
                         except json.decoder.JSONDecodeError:
