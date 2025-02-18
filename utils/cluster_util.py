@@ -62,7 +62,7 @@ def preprocess_text_similarity(text):
     # Remove string inside single quotes
     cleaned_text = re.sub(r"'.*?'", '', cleaned_text)
     # remove punctuation
-    cleaned_text = cleaned_text.translate(str.maketrans('', '', string.punctuation))
+    cleaned_text = cleaned_text.translate(str.maketrans(string.punctuation, ' ' * len(string.punctuation)))
     # clean extra white space
     cleaned_text = re.sub(r'\s+', r' ', cleaned_text)
     # lower case
