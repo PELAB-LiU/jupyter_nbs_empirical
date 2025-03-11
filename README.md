@@ -38,14 +38,19 @@ The sampling procedure is illustrated here:
     + [data_sampling_[sampling]_size_sample.ipynb](./data_sampling_[sampling]_size_sample.ipynb)
 * How the data is clustered and sampled:
     + [data_sampling_[clustering]jaccard_similarity.ipynb](./data_sampling_[clustering]jaccard_similarity.ipynb)
+* How the resampling is done:
+    + [data_sampling_[resampling].ipynb](./data_sampling_[resampling].ipynb)
 
-We then perform manual labeling and reviewing on the sampled dataset, the results associated with the paper can be found here:
+The results, from manual labeling and reviewing on the sampled dataset, can be found here:
 * Data process:
-    + [data_analysis_[preparation]_manual_labels_process.ipynb](./data_analysis_[preparation]_manual_labels_process.ipynb)
-* Plots:
+    + [data_analysis_[0_process]_dataprepare.ipynb](./data_analysis_[0_process]_dataprepare.ipynb)
+* Plots for RQs:
     + [data_analysis_[plots]_rqs.ipynb](./data_analysis_[plots]_rqs.ipynb)
+    + [data_analysis_[plots]_rq2_libraries.ipynb](./data_analysis_[plots]_rq2_libraries.ipynb)
 * Statistic tests:
     + [data_analysis_[statistictests].ipynb](./data_analysis_[statistictests].ipynb)
+* Comparison with existing studies:
+    + [data_analysis_[comparison]_existing_studies.ipynb](./data_analysis_[comparison]_existing_studies.ipynb)
 
 ## Shared Dataset
 All the related data can be found on [zenodo](https://doi.org/10.5281/zenodo.14070488), including:
@@ -56,6 +61,7 @@ All the related data can be found on [zenodo](https://doi.org/10.5281/zenodo.140
 * Clustering results of crashes from all crashes, and from GitHub and Kaggle respectively.
 * Sampled crashes and associated notebooks.
 * Manual labeling and reviewing results.
+* Reproducing results.
 
 * Note: the *full* GitHub notebook dataset is easily downloadable from [The Stack](https://huggingface.co/datasets/bigcode/the-stack-dedup/tree/main/data/jupyter-notebook), For the Kaggle notebooks, which have daily HTTP download limitations, we provide access upon request.
 
