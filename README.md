@@ -61,7 +61,6 @@ All the related data can be found on [zenodo](https://doi.org/10.5281/zenodo.140
 * Clustering results of crashes from all crashes, and from GitHub and Kaggle respectively.
 * Sampled crashes and associated notebooks.
 * Manual labeling and reviewing results.
-* Reproducing results.
 
 * Note: the *full* GitHub notebook dataset is easily downloadable from [The Stack](https://huggingface.co/datasets/bigcode/the-stack-dedup/tree/main/data/jupyter-notebook), For the Kaggle notebooks, which have daily HTTP download limitations, we provide access upon request.
 
