@@ -14,6 +14,7 @@ import builtins
 import matplotlib.pyplot as plt
 from pathlib import Path
 from utils.exception_id import generate_uuid_for_nb_exception
+import hashlib
 try:
     from guesslang import Guess
 except ImportError:
@@ -543,6 +544,51 @@ def visulize_exps_mlnbs(df_mlerr):
     plt.show()
 #     return
 #     return df_err_MLlib_counts, df_err_MLlib_percents
+def check_isNa(target_str: str) -> bool:
+    return (pd.isna(target_str))|(target_str=="")|(target_str=="NaN")|(target_str=="nan")
+
+def kaggle_notebook_url(username: str, notebook_slug: str) -> str:
+    """
+    Generate a Kaggle notebook URL based on username and notebook slug.
+    
+    Args:
+        username (str): Kaggle username (e.g. "ryanholbrook")
+        notebook_slug (str): Notebook slug (e.g. "intro-to-programming")
+
+    Returns:
+        str: Full URL to the Kaggle notebook
+    """
+    if check_isNa(username) or check_isNa(notebook_slug):
+        print("username or url slug is None: ", username, notebook_slug)
+        return None
+    return f"https://www.kaggle.com/code/{username}/{notebook_slug}"
+
+def pseudonymize_nbfilename(username: str, slug: str) -> str:
+    """
+    Convert a filename like 'username_slug.ipynb' into 'XXXX_slug.ipynb'
+    """
+    if check_isNa(username) or check_isNa(slug):
+        print("username or url slug is None: ", username, slug)
+        return None
+    # Generate short pseudonym from hash
+    hash_digest = hashlib.sha256(username.encode()).hexdigest()
+    pseudonym = f"{hash_digest[:6]}"
+
+    new_name = f"{pseudonym}_{slug}.ipynb"
+    return new_name
+
+def rename_notebooks_in_directory(root_dir, dict_names):
+    index = 0
+    for folder, _, files in os.walk(root_dir):
+        for filename in sorted(files):
+            if filename in dict_names.keys():
+                new_filename = dict_names[filename]
+                print(f"Renaming: {filename} → {new_filename}")
+                os.rename(os.path.join(folder, filename), os.path.join(folder, new_filename))
+                index += 1
+    print(f"Renamed {index} notebook files.")
+
+
 
 ########################decrepcated###############################
 

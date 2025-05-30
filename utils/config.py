@@ -14,6 +14,8 @@ path_drive = willems_path_drive
 
 print(f"{path_default=}")
 
+path_dbinfo = Path(r"C:\Users\yirwa29\Downloads\Dataset-Nb\NBData_KGTorrent\output_files")
+
 path_github_error_process = path_default.joinpath("GitHub")
 path_kaggle_error_process = path_default.joinpath("Kaggle")
 
