@@ -1,9 +1,9 @@
 # Why do Machine Learning Notebooks Crash?
 
-This is the official repository for our paper "Why do Machine Learning Notebooks Crash?", which is currently under review.
+This is the official repository for our paper "Why do Machine Learning Notebooks Crash?", which is published in IEEE Transactions on Software Engineering (TSE).
 It is an empirical study on software crashes in ML programs written in Jupyter notebooks.
 
-Paper link: https://arxiv.org/abs/2411.16795
+Paper link: https://doi.org/10.1109/TSE.2025.3574500
 
 
 ## Expirimental Setup:
